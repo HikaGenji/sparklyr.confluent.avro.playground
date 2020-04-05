@@ -46,7 +46,13 @@ services:
   rstudio:
     image: jozefhajnala/sparkfromr:latest
     hostname: rstudio
+    container_name: rstudio
     ports:
       - "8787:8787"
     environment:
       PASSWORD: pass
+      
+  avro-client:
+    image: hikagenji/confluent-kafka-avro-python:latest
+    hostname: avro-client
+    container_name: avro-client
