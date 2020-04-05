@@ -51,8 +51,3 @@ services:
       - "8787:8787"
     environment:
       PASSWORD: pass
-      
-  avro-client:
-    image: hikagenji/confluent-kafka-avro-python:latest
-    hostname: avro-client
-    container_name: avro-client
