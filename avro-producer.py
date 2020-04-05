@@ -1,7 +1,5 @@
 #!/usr/bin/python
-# docker run -v /home/vagrant:/app hikagenji/confluent-kafka-avro-python:latest python app/avro-producer.py
-# docker run -it -v /home/vagrant:/app hikagenji/confluent-kafka-avro-python:latest python
-
+# docker run -it --network host hikagenji/confluent-kafka-avro-python:latest python
 
 import random
 import json
