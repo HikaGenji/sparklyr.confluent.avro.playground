@@ -1,4 +1,8 @@
 #!/usr/bin/python
+# docker run -v /home/vagrant:/app hikagenji/confluent-kafka-avro-python:latest python app/avro-producer.py
+# docker run -it -v /home/vagrant:/app hikagenji/confluent-kafka-avro-python:latest python
+
+
 import random
 import json
 import threading
@@ -70,9 +74,6 @@ def delivery_callback(err, msg):
         else:
             sys.stderr.write('%% Message delivered to %s [%d] @ %d\n' %
                              (msg.topic(), msg.partition(), msg.offset()))
-
-abort = 60*60
-start = time.time()
 
 r = [p.produce(topic="parameter", key={"id": o}, 
      value={"timestamp": int(round(time.time() * 1000)), "id": o, "side": 1}, 
