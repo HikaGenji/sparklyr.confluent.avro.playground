@@ -79,6 +79,14 @@ query %>%
 dbplyr::sql() %>%
 tbl(sc, .)
 
+# invoke style
+expr <- str_interp("'${value_schema_str}'")
+
+parameter%>%
+spark_dataframe() %>%
+invoke("select", invoke_static(sc, "org.apache.spark.sql.avro.functions", "from_avro", "value", expr), list()) %>%
+collect()
+
 stream_stop(stream)
 
 # 'spark.sql.debug.maxToStringFields'

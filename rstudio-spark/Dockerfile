@@ -24,16 +24,6 @@ RUN Rscript -e 'devtools::install_github("rstudio/sparklyr")'
 # Install spark
 RUN Rscript -e 'sparklyr::spark_install("3.0.0-preview")'
 
-# Install arrow C++ libs
-COPY resources/arrow_install.sh /root/.local/arrow_install.sh
-RUN sh /root/.local/arrow_install.sh
-
-# Install arrow R package
-RUN install2.r --error --deps TRUE arrow
-
-# Install microbenchmark
-RUN install2.r --error --deps TRUE microbenchmark
-
 # Install RStudio
 ARG RSTUDIO_VERSION
 ENV RSTUDIO_VERSION=${RSTUDIO_VERSION:-1.2.1335}
@@ -136,19 +126,8 @@ CMD ["/init"]
 # Copy in some R script
 COPY resources/spark_script.R /root/.local/spark_script.R
 
-# Install bookdown
-RUN install2.r --error --deps TRUE bookdown
-
 # Install data.table
 RUN install2.r --error --deps TRUE data.table
-
-# Install Miscellaneous R packages
-RUN Rscript -e 'remotes::install_version("highcharter", "0.7.0")'
-RUN install2.r --error microbenchmark
-RUN install2.r --error nycflights13
-
-# Install jhaddins
-RUN Rscript -e 'remotes::install_git("https://gitlab.com/jozefhajnala/jhaddins")'
 
 # Cleanup
 RUN apt-get clean \
