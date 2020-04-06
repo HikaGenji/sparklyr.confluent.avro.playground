@@ -21,9 +21,6 @@ RUN apt-get update \
 RUN install2.r --error --deps TRUE devtools
 RUN Rscript -e 'devtools::install_github("rstudio/sparklyr")'
 
-# Install spark
-RUN Rscript -e 'sparklyr::spark_install("3.0.0-preview")'
-
 # Install RStudio
 ARG RSTUDIO_VERSION
 ENV RSTUDIO_VERSION=${RSTUDIO_VERSION:-1.2.1335}
@@ -124,12 +121,16 @@ VOLUME /home/rstudio/kitematic
 CMD ["/init"]
 
 # Copy in some R script
+USER rstudio
+# Install spark
+RUN Rscript -e 'sparklyr::spark_install("3.0.0-preview")'
 COPY resources/spark_script.R /root/.local/spark_script.R
 
 # Install data.table
 RUN install2.r --error --deps TRUE data.table
 
 # Cleanup
+USER root
 RUN apt-get clean \
   && apt-get autoremove \
   && rm -rf /var/lib/apt/lists/ \

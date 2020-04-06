@@ -44,7 +44,7 @@ services:
       SCHEMA_REGISTRY_KAFKASTORE_CONNECTION_URL: 'zookeeper:2181'
    
   rstudio:
-    image: jozefhajnala/sparkfromr:latest
+    image: hikagenji/rstudio-spark:latest
     hostname: rstudio
     container_name: rstudio
     ports:

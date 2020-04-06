@@ -44,33 +44,13 @@ value_schema_str <- '
 }
 '
 config <- spark_config()
-config[["sparklyr.shell.conf"]] <- "spark.driver.extraJavaOptions=-Djava.net.useSystemProxies=true"
-config[["sparklyr.shell.packages"]] <- c("org.apache.spark:spark-sql-kafka-0-10_2.12:2.4.3" , "org.apache.spark:spark-avro_2.12:2.4.3")
+config[["sparklyr.shell.packages"]] <- c("org.apache.spark:spark-avro_2.12:3.0.0-preview", "org.apache.spark:spark-sql-kafka-0-10_2.12:3.0.0-preview")
 
-sc <- spark_connect(master = "local", config = config)
+sc <- spark_connect("local", spark_home = "~/spark/spark-3.0.0-preview-bin-hadoop3.2", version="3.0.0-preview", config=config)
 
 read_options <- list(kafka.bootstrap.servers = "localhost:29092",
                      subscribe = "parameter", startingOffsets="earliest")
 
-# get kafka data into spark
-stream_read_kafka(sc, options = read_options) %>%
-spark_dataframe() %>%
-stream_write_memory(name="parameter")
-
-parameter <- tbl(sc, "parameter")
-head(parameter)
-
-# get some stats
-parameter %>%
-spark_dataframe() %>%
-invoke("describe", as.list(colnames(parameter))) %>%
-sdf_register()
-
-# using invoke
-parameter%>%
-spark_dataframe() %>%
-invoke("select", "value", list()) %>%
-collect()
 
 # sql query on parameter stream
 query <- str_interp('select from_avro(value, "parameter_value", \'${value_schema_str}\') as value from parameter')
@@ -84,9 +64,6 @@ expr <- str_interp("'${value_schema_str}'")
 
 parameter%>%
 spark_dataframe() %>%
-invoke("select", invoke_static(sc, "org.apache.spark.sql.avro.functions", "from_avro", "value", expr), list()) %>%
-collect()
+invoke("select", invoke_static(sc, "org.apache.spark.sql.avro.functions", "from_avro", "value", expr), list())
 
 stream_stop(stream)
-
-# 'spark.sql.debug.maxToStringFields'
