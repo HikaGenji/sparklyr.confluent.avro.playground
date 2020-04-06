@@ -13,5 +13,7 @@ inside rstudio container:
     df: org.apache.spark.sql.DataFrame = [value: struct<timestamp: timestamp, side: int ... 1 more field>]
   
 - read the data with R: readAvro.R
-  - fails when using sql, cannot find from_avro
-  - fails when using invoke, cannot find from_avro
+  - fails when using sql: 
+    Error: org.apache.spark.sql.AnalysisException: Undefined function: 'from_avro'. This function is neither a registered temporary   function nor a permanent function registered in the database 'default'.;
+  - fails when using invoke:
+    Error: java.lang.ClassNotFoundException: org.apache.spark.sql.avro.functions
