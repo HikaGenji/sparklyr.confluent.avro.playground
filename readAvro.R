@@ -68,6 +68,7 @@ stream_write_memory(name="parameter")
 
 # invoke style
 expr <- str_interp("'${value_schema_str}'")
+parameter <- tbl(sc, "parameter")
 
 parameter%>%
 spark_dataframe() %>%
