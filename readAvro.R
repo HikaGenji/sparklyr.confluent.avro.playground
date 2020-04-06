@@ -44,7 +44,7 @@ value_schema_str <- '
 }
 '
 config <- spark_config()
-config[["sparklyr.shell.packages"]] <- c("org.apache.spark:spark-avro_2.12:3.0.0-preview", "org.apache.spark:spark-sql-kafka-0-10_2.12:3.0.0-preview")
+config[["sparklyr.shell.packages"]] <- "org.apache.spark:spark-sql-kafka-0-10_2.12:3.0.0-preview,org.apache.spark:spark-avro_2.12:3.0.0-preview"
 
 sc <- spark_connect("local", spark_home = "~/spark/spark-3.0.0-preview-bin-hadoop3.2", version="3.0.0-preview", config=config)
 
@@ -62,9 +62,6 @@ query %>%
 dbplyr::sql() %>%
 tbl(sc, .)
 
-stream_read_kafka(sc, options = read_options) %>%
-spark_dataframe() %>%
-stream_write_memory(name="parameter")
 
 # invoke style
 expr <- str_interp("'${value_schema_str}'")
