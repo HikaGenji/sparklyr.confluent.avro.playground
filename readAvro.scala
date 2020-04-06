@@ -1,6 +1,6 @@
-// /home/rstudio/spark/spark-3.0.0-preview-bin-hadoop2.7/bin/spark-shell --conf "spark.driver.extraJavaOptions=-Djava.net.useSystemProxies=true" --packages org.apache.spark:spark-sql-kafka-0-10_2.12:3.0.0-preview,org.apache.spark:spark-avro_2.12:3.0.0-preview
+// ./root/spark/spark-2.4.3-bin-hadoop2.7/bin/spark-shell --packages org.apache.spark:spark-sql-kafka-0-10_2.12:2.4.3,org.apache.spark:spark-avro_2.12:2.4.3
 
-import org.apache.spark.sql.avro.functions._
+import org.apache.spark.sql.avro._
 
 val key_schema_str = """
 {
@@ -44,15 +44,7 @@ val value_schema_str = """
 }
 """
 
-val df = spark
-  .readStream
-  .format("kafka")
-  .option("kafka.bootstrap.servers", "localhost:29092")
-  .option("subscribe", "parameter")
-  .load()
-  .select(
-    from_avro($"key", key_schema_str).as("key"), 
-    from_avro($"value", value_schema_str ).as("value"))
+val df = spark.readStream.format("kafka").option("kafka.bootstrap.servers", "localhost:29092").option("subscribe", "parameter").load().select(from_avro($"value", value_schema_str ).as("value"))
     
     
     
