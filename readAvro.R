@@ -51,6 +51,9 @@ sc <- spark_connect("local", spark_home = "~/spark/spark-3.0.0-preview-bin-hadoo
 read_options <- list(kafka.bootstrap.servers = "localhost:29092",
                      subscribe = "parameter", startingOffsets="earliest")
 
+stream_read_kafka(sc, options = read_options) %>%
+spark_dataframe() %>%
+stream_write_memory(name="parameter")
 
 # sql query on parameter stream
 query <- str_interp('select from_avro(value, "parameter_value", \'${value_schema_str}\') as value from parameter')
@@ -58,6 +61,10 @@ query <- str_interp('select from_avro(value, "parameter_value", \'${value_schema
 query %>%
 dbplyr::sql() %>%
 tbl(sc, .)
+
+stream_read_kafka(sc, options = read_options) %>%
+spark_dataframe() %>%
+stream_write_memory(name="parameter")
 
 # invoke style
 expr <- str_interp("'${value_schema_str}'")
