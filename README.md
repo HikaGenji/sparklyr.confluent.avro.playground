@@ -9,5 +9,9 @@ Steps to replicate:
 inside rstudio container:
 - read the data from spark-shell with readAvro.scala:
   /home/rstudio/spark/spark-3.0.0-preview-bin-hadoop3.2/bin/spark-shell --packages org.apache.spark:spark-sql-kafka-0-10_2.12:3.0.0-preview,org.apache.spark:spark-avro_2.12:3.0.0-preview
+  - this properly decodes avro struct:
+    df: org.apache.spark.sql.DataFrame = [value: struct<timestamp: timestamp, side: int ... 1 more field>]
   
-- run readAvro.R
+- read the data with R: readAvro.R
+  - fails when using sql, cannot find from_avro
+  - fails when using invoke, cannot find from_avro
