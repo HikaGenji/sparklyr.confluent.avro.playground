@@ -44,7 +44,8 @@ value_schema_str <- '
 }
 '
 config <- spark_config()
-config[["sparklyr.shell.packages"]] <- "org.apache.spark:spark-sql-kafka-0-10_2.12:3.0.0-preview,org.apache.spark:spark-avro_2.12:3.0.0-preview"
+config$sparklyr.shell.packages <- "org.apache.spark:spark-sql-kafka-0-10_2.12:3.0.0-preview,org.apache.spark:spark-avro_2.12:3.0.0-preview"
+config$sparklyr.log.invoke <- "cat"
 
 sc <- spark_connect("local", spark_home = "~/spark/spark-3.0.0-preview-bin-hadoop3.2", version="3.0.0-preview", config=config)
 
@@ -62,13 +63,21 @@ query %>%
 dbplyr::sql() %>%
 tbl(sc, .)
 
-
 # invoke style
-expr <- str_interp("'${value_schema_str}'")
-parameter <- tbl(sc, "parameter")
+p <- parameter%>%
+    spark_dataframe()
 
-parameter%>%
-spark_dataframe() %>%
-invoke("select", invoke_static(sc, "org.apache.spark.sql.avro.functions", "from_avro", "value", expr), list())
+c <-  invoke_static(sc, "org.apache.spark.sql.avro.functions", 
+                   "from_avro",
+                   invoke_static(sc, "org.apache.spark.sql.functions", "col", "value"),
+                   expr)
+
+p %>% 
+invoke("withColumn", "jsonvalue", c) %>%
+sdf_register() %>%
+select("jsonvalue") %>%
+collect()
 
 stream_stop(stream)
+
+
