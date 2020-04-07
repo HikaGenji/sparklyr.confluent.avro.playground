@@ -75,4 +75,8 @@ collect()
 
 stream_stop(stream)
 
+# manage malformed records
+m <- invoke_static(sc, "java.util.Collections", "singletonMap", "mode", "PERMISSIVE")
+
+
 
