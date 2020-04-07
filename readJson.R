@@ -11,9 +11,24 @@ broker <- "broker:9092"
 
 read_options <- list(kafka.bootstrap.servers = broker, subscribe = "test", startingOffsets="earliest")
 
-stream_read_kafka(sc, options = read_options) %>%
+df <- stream_read_kafka(sc, options = read_options)
+
+
+
+# dplyr style
+df %>% 
+mutate(v=as.character(value)) %>%
+select(v)
+
+# try sql via DBI on stream
+df %>%
 spark_dataframe() %>%
 stream_write_memory("test")
-
-# try sql via DBI
 res <- DBI::dbGetQuery(sc, statement ='select CAST(value as STRING) from test')
+
+# invoke style
+"select from_json(CAST(value as STRING), 'timestamp BIGINT, id STRING, side INT') as value from test" %>%
+dbplyr::sql() %>%
+tbl(sc, .) %>%
+mutate(timestamp=value.timestamp, id=value.id, side=value.side) %>%
+select(-value)
