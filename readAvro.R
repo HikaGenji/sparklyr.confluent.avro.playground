@@ -56,14 +56,9 @@ stream_read_kafka(sc, options = read_options) %>%
 spark_dataframe() %>%
 stream_write_memory(name="parameter")
 
-# sql query on parameter stream
-query <- str_interp('select from_avro(value, "parameter_value", \'${value_schema_str}\') as value from parameter')
-
-query %>%
-dbplyr::sql() %>%
-tbl(sc, .)
-
 # invoke style
+expr <- str_interp("${value_schema_str}")
+
 p <- parameter%>%
     spark_dataframe()
 
