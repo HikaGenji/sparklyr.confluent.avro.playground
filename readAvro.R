@@ -68,9 +68,9 @@ c <-  invoke_static(sc, "org.apache.spark.sql.avro.functions",
                    expr)
 
 p %>% 
-invoke("withColumn", "jsonvalue", c) %>%
+invoke("withColumn", "structvalue", c) %>%
 sdf_register() %>%
-select("jsonvalue") %>%
+select("structvalue") %>%
 collect()
 
 stream_stop(stream)
