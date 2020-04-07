@@ -13,8 +13,6 @@ read_options <- list(kafka.bootstrap.servers = broker, subscribe = "test", start
 
 df <- stream_read_kafka(sc, options = read_options)
 
-
-
 # dplyr style
 df %>% 
 mutate(v=as.character(value)) %>%
@@ -24,6 +22,7 @@ select(v)
 df %>%
 spark_dataframe() %>%
 stream_write_memory("test")
+
 res <- DBI::dbGetQuery(sc, statement ='select CAST(value as STRING) from test')
 
 # invoke style
@@ -31,4 +30,7 @@ res <- DBI::dbGetQuery(sc, statement ='select CAST(value as STRING) from test')
 dbplyr::sql() %>%
 tbl(sc, .) %>%
 mutate(timestamp=value.timestamp, id=value.id, side=value.side) %>%
-select(-value)
+select(-value) %>%
+group_by(id) %>%
+summarise(n=count()) 
+
