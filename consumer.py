@@ -1,9 +1,7 @@
 #!/usr/bin/python
 # docker run -it --network host hikagenji/confluent-kafka-avro-python:latest python
 
-import random
 import json
-import threading
 import time
 import sys
 from datetime import datetime
