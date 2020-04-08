@@ -1,3 +1,8 @@
+# https://github.com/jgoodman8/zeppelin-spark-standalone-cluster
+# Before launching the containers
+# docker run --name=master -d bde2020/spark-master:2.3.0-hadoop2.7
+# docker cp master:/spark spark
+# docker stop master
 ---
 version: '2'
 
@@ -53,7 +58,7 @@ services:
       PASSWORD: pass
       
   spark-master:
-    image: bde2020/spark-master:2.3.0-hadoop2.7
+    image: bde2020/spark-master:2.4.5-hadoop2.7
     container_name: spark-master
     expose:
       - "7077"
@@ -65,23 +70,13 @@ services:
     volumes:
       - ./spark:/spark
       
-  spark-worker-1:
-    image: bde2020/spark-worker:2.3.0-hadoop2.7
+  spark-worker:
+    image: bde2020/spark-worker:2.4.5-hadoop2.7
     container_name: spark-worker-1
     depends_on:
       - spark-master
     ports:
       - "8082:8082"
-    environment:
-      - "SPARK_MASTER=spark://spark-master:7077"
-      
-  spark-worker-2:
-    image: bde2020/spark-worker:2.3.0-hadoop2.7
-    container_name: spark-worker-2
-    depends_on:
-      - spark-master
-    ports:
-      - "8083:8083"
     environment:
       - "SPARK_MASTER=spark://spark-master:7077"
       
@@ -97,3 +92,4 @@ services:
       - "MASTER=spark://spark-master:7077"
       - "SPARK_MASTER=spark://spark-master:7077"
       - "SPARK_HOME=/zeppelin/spark"
+      - "SPARK_SUBMIT_OPTIONS=--packages org.apache.spark:spark-sql-kafka-0-10_2.12:2.4.5,org.apache.spark:spark-avro_2.12:2.4.5"
