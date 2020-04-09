@@ -81,7 +81,7 @@ services:
       - "SPARK_MASTER=spark://spark-master:7077"
       
   zeppelin:
-    image: apache/zeppelin:0.8.0
+    image: apache/zeppelin:0.9.0
     container_name: zeppelin
     ports:
       - "8080:8080"
@@ -92,4 +92,4 @@ services:
       - "MASTER=spark://spark-master:7077"
       - "SPARK_MASTER=spark://spark-master:7077"
       - "SPARK_HOME=/zeppelin/spark"
-      - "SPARK_SUBMIT_OPTIONS=--packages org.apache.spark:spark-sql-kafka-0-10_2.12:2.4.5,org.apache.spark:spark-avro_2.12:2.4.5"
+      - "SPARK_SUBMIT_OPTIONS=--packages org.apache.spark:spark-sql-kafka-0-10_2.11:2.4.5,org.apache.spark:spark-avro_2.11:2.4.5"

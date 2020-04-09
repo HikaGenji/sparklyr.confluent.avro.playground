@@ -44,7 +44,7 @@ val value_schema_str = """
 }
 """
 
-val df = spark.readStream.format("kafka").option("kafka.bootstrap.servers", "localhost:29092").option("subscribe", "parameter").load().select(from_avro($"value", value_schema_str ).as("value"))
+val df = spark.readStream.format("kafka").option("kafka.bootstrap.servers", "broker:9092").option("subscribe", "parameter").load().select(from_avro($"value", value_schema_str ).as("value"))
     
     
     
