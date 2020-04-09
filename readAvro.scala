@@ -51,6 +51,6 @@ val df = spark.readStream.format("kafka")
 		.load()
 		.select(from_avro($"value", value_schema_str )
 		.as("value"))
-df.select(df.col("value.timestamp"), df.col("value.side"), df.col("value.id"))   
+        .select(df.col("value.timestamp"), df.col("value.side"), df.col("value.id"))   
     
     
