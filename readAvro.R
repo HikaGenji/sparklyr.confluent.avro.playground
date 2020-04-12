@@ -50,6 +50,10 @@ config$sparklyr.log.invoke <- "cat"
 
 sc <- spark_connect("spark://spark-master:7077", spark_home = "spark/spark-2.4.1-bin-hadoop2.7", config=config)
 
+# test to_avro
+
+invoke_static(sc, "sparkavroudf.AvroUtils", "toAvro", spark_dataframe(sdf_len(sc, 3)), invoke_new(sc, "org.apache.spark.sql.Column", "id")) %>% sdf_register()
+
 read_options <- list(kafka.bootstrap.servers = "localhost:29092",
                      subscribe = "parameter", startingOffsets="earliest")
 
