@@ -2,8 +2,9 @@ FROM rocker/rstudio:3.6.3
 
 RUN apt-get update && apt-get install -y libxml2-dev libgit2-dev zlib1g-dev
 
-RUN R -e 'install.packages(c("devtools", "sparklyr"), dependencies=TRUE)'
-RUN R -e 'sparklyr::spark_install(version = "2.4.1", verbose = TRUE)'
+RUN R -e 'install.packages(c("devtools"), dependencies=TRUE)'
+RUN R -e 'devtools::install_github("sparklyr/sparklyr")'
+RUN R -e 'sparklyr::spark_install(version = "2.4.5", verbose = TRUE)'
 RUN R -e 'devtools::install_github("r-spark/sparkavroudf")'
 
 RUN apt install -y apt-transport-https ca-certificates wget dirmngr gnupg software-properties-common

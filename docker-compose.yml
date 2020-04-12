@@ -58,7 +58,7 @@ services:
       PASSWORD: pass
       
   spark-master:
-    image: bde2020/spark-master:2.4.1-hadoop2.7
+    image: hikagenji/spark-master:latest
     container_name: spark-master
     expose:
       - "7077"
@@ -71,7 +71,7 @@ services:
       - ./spark:/spark
       
   spark-worker:
-    image: bde2020/spark-worker:2.4.1-hadoop2.7
+    image: hikagenji/spark-worker:latest
     container_name: spark-worker
     depends_on:
       - spark-master
@@ -92,4 +92,4 @@ services:
       - "MASTER=spark://spark-master:7077"
       - "SPARK_MASTER=spark://spark-master:7077"
       - "SPARK_HOME=/zeppelin/spark"
-      - "SPARK_SUBMIT_OPTIONS=--packages org.apache.spark:spark-sql-kafka-0-10_2.11:2.4.1,org.apache.spark:spark-avro_2.11:2.4.1"
+      - "SPARK_SUBMIT_OPTIONS=--packages org.apache.spark:spark-sql-kafka-0-10_2.12:2.4.5,org.apache.spark:spark-avro_2.12:2.4.5"

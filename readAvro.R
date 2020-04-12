@@ -45,20 +45,24 @@ value_schema_str <- '
 }
 '
 config <- spark_config()
-config$sparklyr.shell.packages <- "org.apache.spark:spark-sql-kafka-0-10_2.11:2.4.1,org.apache.spark:spark-avro_2.11:2.4.1"
+config$sparklyr.shell.packages <- "org.apache.spark:spark-sql-kafka-0-10_2.12:2.4.2,org.apache.spark:spark-avro_2.12:2.4.2"
 config$sparklyr.log.invoke <- "cat"
 
-sc <- spark_connect("spark://spark-master:7077", spark_home = "spark/spark-2.4.1-bin-hadoop2.7", config=config)
+sc <- spark_connect("spark://spark-master:7077", spark_home = "spark/spark-2.4.2-bin-hadoop2.7", config=config)
 
 # test to_avro
 
 invoke_static(sc, "sparkavroudf.AvroUtils", "toAvro", spark_dataframe(sdf_len(sc, 3)), invoke_new(sc, "org.apache.spark.sql.Column", "id")) %>% sdf_register()
 
-read_options <- list(kafka.bootstrap.servers = "localhost:29092",
+read_options <- list(kafka.bootstrap.servers = "broker:9092",
                      subscribe = "parameter", startingOffsets="earliest")
 
 stream_read_kafka(sc, options = read_options) %>%
 spark_dataframe() %>%
+invoke_static(sc, "sparkavroudf.AvroUtils", "fromAvro", .,
+                  invoke_new(sc, "org.apache.spark.sql.Column", "value"),
+				  value_schema_str )
+ 
 stream_write_memory(name="parameter")
 
 # invoke style
