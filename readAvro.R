@@ -1,6 +1,7 @@
 library(sparklyr)
 library(dplyr)
 library(stringr)
+library(sparkavroudf)
 
 key_schema_str <- '
 {
@@ -44,10 +45,10 @@ value_schema_str <- '
 }
 '
 config <- spark_config()
-config$sparklyr.shell.packages <- "org.apache.spark:spark-sql-kafka-0-10_2.12:3.0.0-preview,org.apache.spark:spark-avro_2.12:3.0.0-preview"
+config$sparklyr.shell.packages <- "org.apache.spark:spark-sql-kafka-0-10_2.11:2.4.1,org.apache.spark:spark-avro_2.11:2.4.1"
 config$sparklyr.log.invoke <- "cat"
 
-sc <- spark_connect("local", spark_home = "~/spark/spark-3.0.0-preview-bin-hadoop3.2", version="3.0.0-preview", config=config)
+sc <- spark_connect("spark://spark-master:7077", spark_home = "spark/spark-2.4.1-bin-hadoop2.7", config=config)
 
 read_options <- list(kafka.bootstrap.servers = "localhost:29092",
                      subscribe = "parameter", startingOffsets="earliest")
@@ -62,21 +63,6 @@ expr <- str_interp("${value_schema_str}")
 p <- parameter%>%
     spark_dataframe()
 
-c <-  invoke_static(sc, "org.apache.spark.sql.avro.functions", 
-                   "from_avro",
-                   invoke_static(sc, "org.apache.spark.sql.functions", "col", "value"),
-                   expr)
-
-p %>% 
-invoke("withColumn", "structvalue", c) %>%
-sdf_register() %>%
-select("structvalue") %>%
-collect()
 
 stream_stop(stream)
-
-# manage malformed records
-m <- invoke_static(sc, "java.util.Collections", "singletonMap", "mode", "PERMISSIVE")
-
-
 
