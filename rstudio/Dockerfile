@@ -20,6 +20,5 @@ apt install -y adoptopenjdk-8-hotspot
 ENV JAVA_HOME /usr/lib/jvm/java-8-oracle
 
 
-RUN mv /root/spark /opt/ && \
-    chown -R rstudio:rstudio /opt/spark/ && \
+RUN chown -R rstudio:rstudio /opt/spark/ && \
     ln -s /opt/spark/ /home/rstudio/
