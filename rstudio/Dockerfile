@@ -2,10 +2,14 @@ FROM rocker/rstudio:3.6.3
 
 RUN apt-get update && apt-get install -y libxml2-dev libgit2-dev zlib1g-dev
 
-RUN R -e 'install.packages(c("devtools"), dependencies=TRUE)'
+RUN R -e 'install.packages("devtools", dependencies=TRUE)'
 RUN R -e 'devtools::install_github("sparklyr/sparklyr")'
-RUN R -e 'sparklyr::spark_install(version = "2.4.5", verbose = TRUE)'
 RUN R -e 'devtools::install_github("r-spark/sparkavroudf")'
+RUN wget https://archive.apache.org/dist/spark/spark-2.4.5/spark-2.4.5-bin-hadoop2.7.tgz &&\
+tar xvf spark-2.4.5-bin-hadoop2.7.tgz && \
+mv spark-2.4.5-bin-hadoop2.7/ /opt/spark 
+
+ENV SPARK_HOME=/opt/spark
 
 RUN apt install -y apt-transport-https ca-certificates wget dirmngr gnupg software-properties-common
 RUN wget -qO - https://adoptopenjdk.jfrog.io/adoptopenjdk/api/gpg/key/public | apt-key add - && \
