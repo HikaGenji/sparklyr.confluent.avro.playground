@@ -1,21 +1,25 @@
 FROM rocker/rstudio:3.6.3
 
 RUN apt-get update && apt-get install -y libxml2-dev libgit2-dev zlib1g-dev
-
-RUN R -e 'install.packages("sparklyr")'
-RUN R -e 'install.packages("devtools", dependencies=TRUE)'
-RUN R -e 'devtools::install_github("hikagenji/sparkavroudf")'
-RUN wget https://archive.apache.org/dist/spark/spark-2.4.5/spark-2.4.5-bin-hadoop2.7.tgz &&\
-tar xvf spark-2.4.5-bin-hadoop2.7.tgz && \
-mv spark-2.4.5-bin-hadoop2.7/ /opt/spark 
-
-ENV SPARK_HOME=/opt/spark
+RUN apt-get update && apt-get install -y scala
 
 RUN apt install -y apt-transport-https ca-certificates wget dirmngr gnupg software-properties-common
 RUN wget -qO - https://adoptopenjdk.jfrog.io/adoptopenjdk/api/gpg/key/public | apt-key add - && \
 add-apt-repository --yes https://adoptopenjdk.jfrog.io/adoptopenjdk/deb/ && \
 apt update && \
 apt install -y adoptopenjdk-8-hotspot
+
+RUN R -e 'install.packages("sparklyr")'
+RUN wget https://github.com/HikaGenji/sparkavroudf/archive/master.zip && \
+unzip master.zip
+WORKDIR sparkavroudf-master
+RUN R -e 'sparklyr::compile_package_jars(spec = sparklyr::spark_compilation_spec(spark_version = "2.4", jar_name = "sparkavroudf-2.4-4_2.11.jar",jar_dep = normalizePath("deps/spark-avro_2.11-2.4.4.jar")))'
+WORKDIR /
+RUN R CMD build sparkavroudf-master
+RUN R -e 'install.packages("sparkavroudf_0.1.0.tar.gz", repos=NULL)'
+
+ENV SPARK_HOME=/opt/spark
+
 
 ENV JAVA_HOME /usr/lib/jvm/java-8-oracle
 
