@@ -45,7 +45,7 @@ value_schema_str <- '
 }
 '
 config <- spark_config()
-config$sparklyr.shell.packages <- "org.apache.spark:spark-sql-kafka-0-10_2.12:2.4.5"
+config$sparklyr.shell.packages <- "org.apache.spark:spark-sql-kafka-0-10_2.12:2.4.5,org.apache.spark:spark-avro_2.12:2.4.5"
 config$sparklyr.log.invoke <- "cat"
 
 sc <- spark_connect("spark://spark-master:7077", spark_home = "spark", config=config)
@@ -59,11 +59,13 @@ read_options <- list(kafka.bootstrap.servers = "broker:9092",
 
 stream_read_kafka(sc, options = read_options) %>%
 spark_dataframe() %>%
+stream_write_memory(name="parameter")
+
 invoke_static(sc, "sparkavroudf.AvroUtils", "fromAvro", .,
                   invoke_new(sc, "org.apache.spark.sql.Column", "value"),
 				  value_schema_str )
  
-stream_write_memory(name="parameter")
+
 
 # invoke style
 expr <- str_interp("${value_schema_str}")
