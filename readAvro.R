@@ -3,6 +3,12 @@ library(dplyr)
 library(stringr)
 library(sparkavroudf)
 
+# this cannot work as confluent avro contains more than just payload
+# solution is to implement confluent avro deserializer in a scala udf
+# https://github.com/javierluraschi/sparklyudf
+# https://stackoverflow.com/questions/48882723/integrating-spark-structured-streaming-with-the-confluent-schema-registry
+# https://blog.engineering.publicissapient.fr/2018/10/25/spark-structured-streaming-avec-kafka-schema-registry/
+
 Sys.setenv(JAVA_HOME = "/usr/lib/jvm/java-8-oracle")
 
 key_schema_str <- '

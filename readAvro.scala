@@ -1,4 +1,5 @@
 // /home/rstudio/spark/spark-3.0.0-preview-bin-hadoop3.2/bin/spark-shell --packages org.apache.spark:spark-sql-kafka-0-10_2.12:3.0.0-preview,org.apache.spark:spark-avro_2.12:3.0.0-preview
+// https://blog.engineering.publicissapient.fr/2018/10/25/spark-structured-streaming-avec-kafka-schema-registry/
 
 import org.apache.spark.sql.avro._
 
@@ -54,6 +55,8 @@ val df = spark.readStream.format("kafka")
 val d = df.select(df.col("value.timestamp"), df.col("value.side"), df.col("value.id"))   
 
 val query = df.writeStream.outputMode("append").format("console").start()
+
+val query = df.writeStream.outputMode("append").format("memory").queryName("test10").start()
 
     
     
