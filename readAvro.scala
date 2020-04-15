@@ -49,8 +49,11 @@ val df = spark.readStream.format("kafka")
 		.option("subscribe", "parameter")
 		.option("startingOffsets", "earliest")
 		.load()
-		.select(from_avro($"value", value_schema_str )
-		.as("value"))
-        .select(df.col("value.timestamp"), df.col("value.side"), df.col("value.id"))   
+		.select(from_avro($"value", value_schema_str ).as("value"))
+		
+val d = df.select(df.col("value.timestamp"), df.col("value.side"), df.col("value.id"))   
+
+val query = df.writeStream.outputMode("append").format("console").start()
+
     
     

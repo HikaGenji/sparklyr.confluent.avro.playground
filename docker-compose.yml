@@ -3,6 +3,8 @@
 # docker run --name=master -d bde2020/spark-master:2.3.0-hadoop2.7
 # docker cp master:/spark spark
 # docker stop master
+# Chown algoproto.algoproto notebooks -R
+# Chmod 777 notebooks -R
 ---
 version: '2'
 
@@ -56,6 +58,7 @@ services:
       - "8787:8787"
     environment:
       PASSWORD: pass
+      ROOT: "TRUE"
       
   spark-master:
     image: hikagenji/spark-master:latest
@@ -92,4 +95,4 @@ services:
       - "MASTER=spark://spark-master:7077"
       - "SPARK_MASTER=spark://spark-master:7077"
       - "SPARK_HOME=/zeppelin/spark"
-      - "SPARK_SUBMIT_OPTIONS=--packages org.apache.spark:spark-sql-kafka-0-10_2.12:2.4.5,org.apache.spark:spark-avro_2.12:2.4.5"
+      - "SPARK_SUBMIT_OPTIONS=--packages org.apache.spark:spark-sql-kafka-0-10_2.12:3.0.0-preview,org.apache.spark:spark-avro_2.12:3.0.0-preview"

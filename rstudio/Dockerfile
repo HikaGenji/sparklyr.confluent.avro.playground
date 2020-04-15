@@ -17,12 +17,10 @@ RUN R -e 'sparklyr::compile_package_jars(spec = sparklyr::spark_compilation_spec
 WORKDIR /
 RUN R CMD build sparkavroudf-master
 RUN R -e 'install.packages("sparkavroudf_0.1.0.tar.gz", repos=NULL)'
+RUN cp -r /root/spark/spark-2.4.4-bin-hadoop2.7 /home/rstudio/spark
 
-ENV SPARK_HOME=/root/spark/spark-2.4.4-bin-hadoop2.7/
-
+ENV SPARK_HOME=/home/rstudio/sparkspark-2.4.4-bin-hadoop2.7/
 
 ENV JAVA_HOME /usr/lib/jvm/java-8-oracle
 
-
-RUN chown -R rstudio:rstudio /root/spark/spark-2.4.4-bin-hadoop2.7/ && \
-    ln -s /root/spark/spark-2.4.4-bin-hadoop2.7/ /home/rstudio/
+RUN chown -R rstudio:rstudio /home/rstudio/spark

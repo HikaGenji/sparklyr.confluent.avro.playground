@@ -3,6 +3,8 @@ library(dplyr)
 library(stringr)
 library(sparkavroudf)
 
+Sys.setenv(JAVA_HOME = "/usr/lib/jvm/java-8-oracle")
+
 key_schema_str <- '
 {
    "namespace": "indicator",
@@ -45,7 +47,7 @@ value_schema_str <- '
 }
 '
 config <- spark_config()
-config$sparklyr.shell.packages <- "org.apache.spark:spark-sql-kafka-0-10_2.12:2.4.5,org.apache.spark:spark-avro_2.12:2.4.5"
+config$sparklyr.shell.packages <- "org.apache.spark:spark-sql-kafka-0-10_2.11:2.4.4"
 config$sparklyr.log.invoke <- "cat"
 
 sc <- spark_connect("spark://spark-master:7077", spark_home = "spark", config=config)
