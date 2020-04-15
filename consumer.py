@@ -1,5 +1,7 @@
 #!/usr/bin/python
 # docker run -it --network host hikagenji/confluent-kafka-avro-python:latest python
+# kafka-avro-console-consumer --topic parameter --bootstrap-server broker:9092 --from-beginning
+
 
 import json
 import time
