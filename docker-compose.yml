@@ -95,4 +95,4 @@ services:
       - "MASTER=spark://spark-master:7077"
       - "SPARK_MASTER=spark://spark-master:7077"
       - "SPARK_HOME=/zeppelin/spark"
-      - "SPARK_SUBMIT_OPTIONS=--packages org.apache.spark:spark-sql-kafka-0-10_2.12:3.0.0-preview,org.apache.spark:spark-avro_2.12:3.0.0-preview"
+      - "SPARK_SUBMIT_OPTIONS=--packages org.apache.spark:spark-sql-kafka-0-10_2.11:2.4.5,org.apache.spark:spark-avro_2.11:2.4.5"
