@@ -11,10 +11,11 @@ apt install -y adoptopenjdk-8-hotspot
 
 RUN R -e 'install.packages("sparklyr", dependencies=TRUE)'
 RUN R -e 'sparklyr::spark_install("2.4", verbose = TRUE)'
+ADD "https://www.random.org/cgi-bin/randbyte?nbytes=10&format=h" skipcache
 RUN wget https://github.com/HikaGenji/sparkavroudf/archive/master.zip && \
 unzip master.zip
 WORKDIR sparkavroudf-master
-RUN R -e 'sparklyr::compile_package_jars(spec = sparklyr::spark_compilation_spec(spark_version = "2.4", jar_name = "sparklyudf-2.4-5_2.11.jar", jar_dep = list(normalizePath("deps/spark-avro_2.11-2.4.5.jar"), normalizePath("deps/avro-1.9.2.jar"), normalizePath("deps/kafka-avro-serializer-5.4.1.jar"), normalizePath("deps/kafka-schema-registry-client-5.4.1.jar"), normalizePath("deps/kafka-clients-5.4.1-ce.jar"))))'
+RUN R -e 'sparklyr::compile_package_jars(spec = sparklyr::spark_compilation_spec(spark_version = "2.4", jar_name = "sparklyudf-2.4-5_2.11.jar", jar_dep = list(normalizePath("deps/spark-avro_2.11-2.4.5.jar"), normalizePath("deps/avro-1.9.2.jar"), normalizePath("deps/kafka-avro-serializer-5.4.1.jar"), normalizePath("deps/kafka-schema-registry-client-5.4.1.jar"), normalizePath("deps/kafka-schema-registry-5.4.1.jar"), normalizePath("deps/kafka-clients-5.4.1-ce.jar"))))'
 WORKDIR /
 RUN R CMD build sparkavroudf-master
 RUN R -e 'install.packages("sparklyudf_0.1.0.tar.gz", repos=NULL)'
