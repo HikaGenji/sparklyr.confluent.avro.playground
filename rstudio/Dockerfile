@@ -14,13 +14,13 @@ RUN wget https://github.com/HikaGenji/sparkavroudf/archive/master.zip && \
 unzip master.zip
 WORKDIR sparkavroudf-master
 RUN R -e 'sparklyr::spark_install("2.4", verbose = TRUE)'
-RUN R -e 'sparklyr::compile_package_jars(spec = sparklyr::spark_compilation_spec(spark_version = "2.4", jar_name = "sparkavroudf-2.4-4_2.11.jar", jar_dep = list(normalizePath("deps/spark-avro_2.11-2.4.4.jar"), normalizePath("deps/avro-1.9.2.jar"), normalizePath("deps/kafka-avro-serializer-5.4.1.jar"), normalizePath("deps/kafka-schema-registry-client-5.4.1.jar"))))'
+RUN R -e 'sparklyr::compile_package_jars(spec = sparklyr::spark_compilation_spec(spark_version = "2.4", jar_name = "sparkavroudf-2.4-5_2.11.jar", jar_dep = list(normalizePath("deps/spark-avro_2.11-2.4.5.jar"), normalizePath("deps/avro-1.9.2.jar"), normalizePath("deps/kafka-avro-serializer-5.4.1.jar"), normalizePath("deps/kafka-schema-registry-client-5.4.1.jar"))))'
 WORKDIR /
 RUN R CMD build sparkavroudf-master
 RUN R -e 'install.packages("sparkavroudf_0.1.0.tar.gz", repos=NULL)'
-RUN cp -r /root/spark/spark-2.4.4-bin-hadoop2.7 /home/rstudio/spark
+RUN cp -r /root/spark/spark-2.4.5-bin-hadoop2.7 /home/rstudio/spark
 
-ENV SPARK_HOME=/home/rstudio/sparkspark-2.4.4-bin-hadoop2.7/
+ENV SPARK_HOME=/home/rstudio/sparkspark-2.4.5-bin-hadoop2.7/
 
 ENV JAVA_HOME /usr/lib/jvm/java-8-oracle
 
