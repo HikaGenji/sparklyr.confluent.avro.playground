@@ -8,6 +8,7 @@ library(sparkavroudf)
 # https://github.com/javierluraschi/sparklyudf
 # https://stackoverflow.com/questions/48882723/integrating-spark-structured-streaming-with-the-confluent-schema-registry
 # https://blog.engineering.publicissapient.fr/2018/10/25/spark-structured-streaming-avec-kafka-schema-registry/
+# https://github.com/xebia-france/spark-structured-streaming-blog
 
 Sys.setenv(JAVA_HOME = "/usr/lib/jvm/java-8-oracle")
 
