@@ -12,8 +12,8 @@ sc <- spark_connect("spark://spark-master:7077", spark_home = "spark", config=co
 sparklyudf_register(sc, schemaRegistryUrl)
 
 data.frame(name = "parameter") %>%
-  copy_to(sc, .) %>%
-  mutate(schema =getSchema(name))
+ copy_to(sc, .) %>%
+ mutate(schema =getSchema(name))
 
 invoke_static(sc, "sparklyudf.getSchema", "parameter")
 
@@ -25,17 +25,13 @@ stream_read_kafka(sc, options = read_options) %>%
 spark_dataframe() %>%
 stream_write_memory(name="parameter")
 
-invoke_static(sc, "sparklyudf.getSchema", "fromAvro", .,
-                  invoke_new(sc, "org.apache.spark.sql.Column", "value"),
-				  value_schema_str )
- 
+query <- "select deserialize(value) as msg from parameter"
 
+res <- DBI::dbGetQuery(sc, statement = query)
 
-# invoke style
-expr <- str_interp("${value_schema_str}")
-
-p <- parameter%>%
-    spark_dataframe()
+query %>%
+dbplyr::sql() %>%
+tbl(sc, .)
 
 
 stream_stop(stream)
