@@ -25,5 +25,6 @@ ENV SPARK_HOME=/home/rstudio/sparkspark-2.4.5-bin-hadoop2.7/
 
 ENV JAVA_HOME=/usr/lib/jvm/java-8-oracle
 ENV PATH=$JAVA_HOME/bin:$PATH
+RUN rm -rf /usr/lib/jvm/java-11-openjdk-amd64/
 
 RUN chown -R rstudio:rstudio /home/rstudio/spark
