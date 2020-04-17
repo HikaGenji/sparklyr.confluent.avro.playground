@@ -23,6 +23,7 @@ RUN cp -r /root/spark/spark-2.4.5-bin-hadoop2.7 /home/rstudio/spark
 
 ENV SPARK_HOME=/home/rstudio/sparkspark-2.4.5-bin-hadoop2.7/
 
-ENV JAVA_HOME /usr/lib/jvm/java-8-oracle
+ENV JAVA_HOME=/usr/lib/jvm/java-8-oracle
+ENV PATH=$JAVA_HOME/bin:$PATH
 
 RUN chown -R rstudio:rstudio /home/rstudio/spark
