@@ -1,8 +1,9 @@
 library(sparklyudf)
 library(sparklyr)
+library(dplyr)
 
 config <- spark_config()
-config$sparklyr.shell.repositories <- "http://packages.confluent.io/maven/"
+config$sparklyr.shell.repositories <-  "http://packages.confluent.io/maven/"
 config$sparklyr.gateway.start.timeout <- 360
 schemaRegistryUrl <- "http://localhost:8081"
 
