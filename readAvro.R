@@ -3,10 +3,12 @@ library(sparklyr)
 
 config <- spark_config()
 config$sparklyr.shell.repositories <- "http://packages.confluent.io/maven/"
+config$sparklyr.gateway.start.timeout <- 360
+schemaRegistryUrl <- "http://localhost:8081"
 
 sc <- spark_connect("spark://spark-master:7077", spark_home = "spark", config=config)
 
-sparklyudf_register(sc)
+sparklyudf_register(sc, schemaRegistryUrl)
 
 
 read_options <- list(kafka.bootstrap.servers = "broker:9092",
