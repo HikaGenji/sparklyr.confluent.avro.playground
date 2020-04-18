@@ -3,20 +3,17 @@ library(sparklyr)
 library(dplyr)
 
 config <- spark_config()
-config$sparklyr.shell.repositories <-  "http://packages.confluent.io/maven/"
+config$sparklyr.shell.packages <- "org.apache.spark:spark-sql-kafka-0-10_2.11:2.4.5"
 config$sparklyr.gateway.start.timeout <- 360
 schemaRegistryUrl <- "http://localhost:8081"
 
 sc <- spark_connect("spark://spark-master:7077", spark_home = "spark", config=config)
 
-sparklyudf_register(sc, schemaRegistryUrl)
+sparklyudf_register(sc)
 
 data.frame(name = "parameter") %>%
  copy_to(sc, .) %>%
  mutate(schema =getSchema(name))
-
-invoke_static(sc, "sparklyudf.getSchema", "parameter")
-
 
 read_options <- list(kafka.bootstrap.servers = "broker:9092",
                      subscribe = "parameter", startingOffsets="earliest")
@@ -27,8 +24,10 @@ stream_write_memory(name="parameter")
 
 query <- "select deserialize(value) as msg from parameter"
 
+# eager sql style
 res <- DBI::dbGetQuery(sc, statement = query)
 
+# lazy sql style
 query %>%
 dbplyr::sql() %>%
 tbl(sc, .)
