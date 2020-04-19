@@ -23,7 +23,7 @@ RUN cp -r /root/spark/spark-2.4.5-bin-hadoop2.7 /home/rstudio/spark
 
 ENV SPARK_HOME=/home/rstudio/spark/
 
-ENV JAVA_HOME=/usr/lib/jvm/java-8-oracle
+ENV JAVA_HOME=/usr/lib/jvm/adoptopenjdk-8-hotspot-amd64
 ENV PATH=$JAVA_HOME/bin:$PATH
 RUN update-java-alternatives -s adoptopenjdk-8-hotspot-amd64
 

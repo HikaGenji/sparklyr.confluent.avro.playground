@@ -1,8 +1,7 @@
-// /home/rstudio/spark/spark-2.4.5-bin-hadoop2.7/bin/spark-shell --packages org.apache.spark:spark-sql-kafka-0-10_2.12:2.4.5 --jars  /usr/local/lib/R/site-library/sparklyudf/java/spark-schema-registry-0.1-SNAPSHOT-jar-with-dependencies.jar
 // https://github.com/hortonworks-spark/spark-schema-registry
 
 /*
-/home/rstudio/spark/bin/spark-shell --jars  /usr/local/lib/R/site-library/sparklyudf/java/spark-schema-registry-0.1-SNAPSHOT-jar-with-dependencies.jar --packages org.apache.spark:spark-sql-kafka-0-10_2.11:2.4.5
+/home/rstudio/spark/bin/spark-shell --jars  /usr/local/lib/R/site-library/sparklyudf/java/spark-schema-registry-0.1-SNAPSHOT-jar-with-dependencies.jar --packages org.apache.spark:spark-sql-kafka-0-10_2.11:2.4.5,org.apache.spark:spark-avro_2.11:2.4.5
 --class com.hortonworks.spark.registry.examples.<classname> \
 spark-schema-registry-examples-0.1-SNAPSHOT.jar <schema-registry-url> \
 <bootstrap-servers> <input-topic> <output-topic> <checkpoint-location>
@@ -31,26 +30,17 @@ object SchemaRegistryAvroReader {
 
   def run(): Unit = {
 
-    val schemaRegistryUrl = "http://schema-registry:8181/api/v1/"
+    val schemaRegistryUrl = "http://schema-registry:8081/api/v1/"
     val bootstrapServers = "broker:9092"
     val topic = "parameter"
     val checkpointLocation =UUID.randomUUID.toString
-    val securityProtocol =None
+    val securityProtocol ="PLAINTEXT"
 
-    val spark = SparkSession
-      .builder
-      .appName("SchemaRegistryAvroReader")
-      .getOrCreate()
+    val spark = SparkSession.builder.appName("SchemaRegistryAvroReader").getOrCreate()
 
-    val reader = spark
-      .readStream
-      .format("kafka")
-      .option("kafka.bootstrap.servers", bootstrapServers)
-      .option("subscribe", topic)
+    val reader = spark.readStream.format("kafka").option("kafka.bootstrap.servers", bootstrapServers).option("subscribe", topic)
 
-    val messages = securityProtocol
-      .map(p => reader.option("kafka.security.protocol", p).load())
-      .getOrElse(reader.load())
+    val messages = reader.load()
 
     import spark.implicits._
 
@@ -59,11 +49,12 @@ object SchemaRegistryAvroReader {
 
     // the schema registry config that will be implicitly passed
     implicit val srConfig: SchemaRegistryConfig = SchemaRegistryConfig(config)
+	
+	val df = messages.select(from_sr($"value", topic).alias("message"))
 
     // Read messages from kafka and deserialize.
     // This uses the schema registry schema associated with the topic.
-    val df = messages
-      .select(from_sr($"value", topic).alias("message"))
+    val df = messages.select(from_sr($"value", topic).alias("message"))
 
     // write the output to console
     // should produce events like {"driverId":14,"truckId":25,"miles":373}
