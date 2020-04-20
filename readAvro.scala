@@ -36,28 +36,8 @@ object ConfluentKafkaAvroReader {
 	val spark = getSparkSession(properties, PARAM_JOB_NAME, PARAM_JOB_MASTER, PARAM_LOG_LEVEL)
 	val schemaRegistryConfig = properties.getSchemaRegistryConfigurations("option.subscribe")
     val stream = spark.readStream.format("kafka").option("startingOffsets", "earliest").option("kafka.bootstrap.servers", kafkaUrl).addOptions(properties)
-
     val deserialized =   stream.load().select(from_confluent_avro(col("value"), schemaRegistryConfig) as 'data)
-
-    // YOUR OPERATIONS CAN GO HERE
-
     deserialized.printSchema()
-
     deserialized.writeStream.format("console").option("truncate", "false").start().awaitTermination(1000)
-  }
-
-  private def configureExample(dataFrame: DataFrame, properties: Properties): Dataset[Row] = {
-
-    import za.co.absa.abris.avro.functions.from_confluent_avro
-
-    val schemaRegistryConfig = properties.getSchemaRegistryConfigurations(PARAM_OPTION_SUBSCRIBE)
-
-    if (properties.getProperty(PARAM_EXAMPLE_SHOULD_USE_SCHEMA_REGISTRY).toBoolean) {
-      dataFrame.select(from_confluent_avro(col("value"), schemaRegistryConfig) as 'data)
-    } else {
-      val source = scala.io.Source.fromFile(properties.getProperty(PARAM_PAYLOAD_AVRO_SCHEMA))
-      val schemaString = try source.mkString finally source.close()
-      dataFrame.select(from_confluent_avro(col("value"), schemaString, schemaRegistryConfig) as 'data)
-    }
   }
 }

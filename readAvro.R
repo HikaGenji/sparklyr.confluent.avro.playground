@@ -1,4 +1,3 @@
-library(sparklyudf)
 library(sparklyr)
 library(dplyr)
 
