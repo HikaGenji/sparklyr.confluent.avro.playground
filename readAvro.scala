@@ -1,74 +1,63 @@
-// https://github.com/hortonworks-spark/spark-schema-registry
+// /home/rstudio/spark/bin/spark-shell --repositories http://packages.confluent.io/maven/ --packages io.confluent:kafka-avro-serializer:5.4.1,io.confluent:kafka-schema-registry:5.4.1,org.apache.spark:spark-sql-kafka-0-10_2.11:2.4.5,org.apache.spark:spark-avro_2.11:2.4.5,za.co.absa:abris_2.11:3.1.1
 
-/*
-/home/rstudio/spark/bin/spark-shell --jars  /usr/local/lib/R/site-library/sparklyudf/java/spark-schema-registry-0.1-SNAPSHOT-jar-with-dependencies.jar --packages org.apache.spark:spark-sql-kafka-0-10_2.11:2.4.5,org.apache.spark:spark-avro_2.11:2.4.5
---class com.hortonworks.spark.registry.examples.<classname> \
-spark-schema-registry-examples-0.1-SNAPSHOT.jar <schema-registry-url> \
-<bootstrap-servers> <input-topic> <output-topic> <checkpoint-location>
-*/
+import java.util.Properties
 
-import org.apache.spark.sql.avro._
-
-// val query = df.writeStream.outputMode("append").format("memory").queryName("test").start()
-
-import java.util.UUID
-
-import com.hortonworks.spark.registry.util._
+import org.apache.spark.sql.functions.col
+import org.apache.spark.sql.{DataFrame, Dataset, Row}
+import za.co.absa.abris.examples.utils.ExamplesUtils._
 import org.apache.spark.sql.SparkSession
-import org.apache.spark.sql.streaming.{OutputMode, Trigger}
+import za.co.absa.abris.avro.functions.from_confluent_avro
 
-/**
- * This example de-serializes the ouput produced by [[SchemaRegistryAvroExample]] and
- * prints the output to console. The schema is automatically infered by querying the schema
- * registry.
- *
- * Usage:
- * SchemaRegistryAvroReader <schema-registry-url> <bootstrap-servers> <input-topic> <checkpoint-location> [security.protocol]
- */
- 
-object SchemaRegistryAvroReader {
-
-  def run(): Unit = {
-
-    val schemaRegistryUrl = "http://schema-registry:8081/api/v1/"
-    val bootstrapServers = "broker:9092"
-    val topic = "parameter"
-    val checkpointLocation =UUID.randomUUID.toString
-    val securityProtocol ="PLAINTEXT"
-
-    val spark = SparkSession.builder.appName("SchemaRegistryAvroReader").getOrCreate()
-
-    val reader = spark.readStream.format("kafka").option("kafka.bootstrap.servers", bootstrapServers).option("subscribe", topic)
-
-    val messages = reader.load()
-
-    import spark.implicits._
-
-    // the schema registry client config
-    val config = Map[String, Object]("schema.registry.url" -> schemaRegistryUrl)
-
-    // the schema registry config that will be implicitly passed
-    implicit val srConfig: SchemaRegistryConfig = SchemaRegistryConfig(config)
+object ConfluentKafkaAvroReader {
+  val PARAM_JOB_NAME = "job.name"
+  val PARAM_JOB_MASTER = "job.master"
+  val PARAM_PAYLOAD_AVRO_SCHEMA = "payload.avro.schema"
+  val PARAM_LOG_LEVEL = "log.level"
+  val PARAM_OPTION_SUBSCRIBE = "option.subscribe"
+  val kafkaUrl = "broker:9092"
+  val PARAM_EXAMPLE_SHOULD_USE_SCHEMA_REGISTRY = "example.should.use.schema.registry"
+  val kafkaUrl = "broker:9092"
+  
+  def main(): Unit = {
+    val properties = new Properties()
+	properties.setProperty("job.name", "SampleJob")
+	properties.setProperty("job.master", "local[*]")
+	properties.setProperty("key.schema.id", "latest")
+	properties.setProperty("value.schema.id", "latest")
+	properties.setProperty("value.schema.naming.strategy", "topic.name")
+	properties.setProperty("schema.name", "native_complete")
+	properties.setProperty("schema.registry.topic", "parameter")
+	properties.setProperty("option.subscribe", "parameter")
+	properties.setProperty("schema.namespace", "all-types.test")
+	properties.setProperty("key.schema.id", "latest")
+	properties.setProperty("log.level", "ERROR")
+	properties.setProperty("schema.registry.url", "http://schema-registry:8081")
 	
-	val df = messages.select(from_sr($"value", topic).alias("message"))
+	val spark = getSparkSession(properties, PARAM_JOB_NAME, PARAM_JOB_MASTER, PARAM_LOG_LEVEL)
+	val schemaRegistryConfig = properties.getSchemaRegistryConfigurations("option.subscribe")
+    val stream = spark.readStream.format("kafka").option("startingOffsets", "earliest").option("kafka.bootstrap.servers", kafkaUrl).addOptions(properties)
 
-    // Read messages from kafka and deserialize.
-    // This uses the schema registry schema associated with the topic.
-    val df = messages.select(from_sr($"value", topic).alias("message"))
+    val deserialized =   stream.load().select(from_confluent_avro(col("value"), schemaRegistryConfig) as 'data)
 
-    // write the output to console
-    // should produce events like {"driverId":14,"truckId":25,"miles":373}
-    val query = df
-      .writeStream
-      .format("console")
-      .trigger(Trigger.ProcessingTime(10000))
-      .outputMode(OutputMode.Append())
-      .start()
+    // YOUR OPERATIONS CAN GO HERE
 
-    query.awaitTermination()
+    deserialized.printSchema()
+
+    deserialized.writeStream.format("console").option("truncate", "false").start().awaitTermination(1000)
   }
 
-}
+  private def configureExample(dataFrame: DataFrame, properties: Properties): Dataset[Row] = {
 
-    
-    
+    import za.co.absa.abris.avro.functions.from_confluent_avro
+
+    val schemaRegistryConfig = properties.getSchemaRegistryConfigurations(PARAM_OPTION_SUBSCRIBE)
+
+    if (properties.getProperty(PARAM_EXAMPLE_SHOULD_USE_SCHEMA_REGISTRY).toBoolean) {
+      dataFrame.select(from_confluent_avro(col("value"), schemaRegistryConfig) as 'data)
+    } else {
+      val source = scala.io.Source.fromFile(properties.getProperty(PARAM_PAYLOAD_AVRO_SCHEMA))
+      val schemaString = try source.mkString finally source.close()
+      dataFrame.select(from_confluent_avro(col("value"), schemaString, schemaRegistryConfig) as 'data)
+    }
+  }
+}
