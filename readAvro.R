@@ -8,14 +8,16 @@ config$sparklyr.shell.repositories <- "http://packages.confluent.io/maven/"
 
 sc <- spark_connect(master = "local", spark_home = "spark", config=config)
 
-stream_read_kafka_avro(sc, "parameter") %>%
-stream_write_memory("parameter")
+stream_read_kafka_avro(sc, "parameter", startingOffsets="earliest") %>%
+stream_write_memory("p")
 
-# sql style 'eager'
-query <- 'select data.timestamp, data.side from parameter'
+# sql style 'eager' returns an R dataframe
+query <- 'select data.timestamp, data.side, data.id from p'
 res   <- DBI::dbGetQuery(sc, statement =query)
 
-# dbplyr style 'lazy'
+# dbplyr style 'lazy' returns a spark dataframe stream
 query %>%
 dbplyr::sql() %>%
-tbl(sc, .)
+tbl(sc, .) %>%
+group_by(id) %>%
+summarise(n=count()) 
