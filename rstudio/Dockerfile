@@ -15,7 +15,7 @@ ADD "https://www.random.org/cgi-bin/randbyte?nbytes=10&format=h" skipcache
 RUN wget https://github.com/HikaGenji/sparkavroudf/archive/master.zip && \
 unzip master.zip
 WORKDIR sparkavroudf-master
-RUN R -e 'sparklyr::compile_package_jars(spec = sparklyr::spark_compilation_spec(spark_version = "2.4", jar_name = "sparklyudf-2.4-5_2.11.jar", jar_dep = list(normalizePath("deps/spark-schema-registry-0.1-SNAPSHOT-jar-with-dependencies.jar"))))'
+RUN R -e 'sparklyr::compile_package_jars(spec = sparklyr::spark_compilation_spec(spark_version = "2.4", jar_name = "sparklyudf-2.4-5_2.11.jar", jar_dep = list(normalizePath("deps/abris_2.11-3.1.1.jar"), normalizePath("deps/kafka-schema-registry-5.4.1.jar"), normalizePath("deps/spark-avro_2.11-2.4.5.jar"), normalizePath("deps/spark-sql-kafka-0-10_2.11-2.4.5.jar"))))'
 WORKDIR /
 RUN R CMD build sparkavroudf-master
 RUN R -e 'install.packages("sparklyudf_0.1.0.tar.gz", repos=NULL)'

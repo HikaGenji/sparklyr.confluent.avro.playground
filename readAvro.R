@@ -1,35 +1,24 @@
+library(sparklyudf)
 library(sparklyr)
 library(dplyr)
 
 config <- spark_config()
-config$sparklyr.shell.packages <- "org.apache.spark:spark-sql-kafka-0-10_2.11:2.4.5"
-# schemaRegistryUrl <- "http://localhost:8081"
+config$sparklyr.shell.packages <- "io.confluent:kafka-avro-serializer:5.4.1,io.confluent:kafka-schema-registry:5.4.1,org.apache.spark:spark-sql-kafka-0-10_2.11:2.4.5,org.apache.spark:spark-avro_2.11:2.4.5,za.co.absa:abris_2.11:3.1.1"
+config$sparklyr.shell.repositories <- "http://packages.confluent.io/maven/"
 
-sc <- spark_connect("spark://spark-master:7077", spark_home = "spark", config=config)
+sc <- spark_connect(master = "local", spark_home = "spark", config=config)
 
-sparklyudf_register(sc)
+df <- invoke_static(sc, "sparklyudf.Reader", "stream", "parameter")
 
-data.frame(name = "parameter") %>%
- copy_to(sc, .) %>%
- mutate(schema =getSchema(name))
-
-read_options <- list(kafka.bootstrap.servers = "broker:9092",
-                     subscribe = "parameter", startingOffsets="earliest")
-
-stream_read_kafka(sc, options = read_options) %>%
+df %>%
 spark_dataframe() %>%
-stream_write_memory(name="parameter")
+stream_write_memory("parameter")
 
-query <- "select deserialize(value, 'parameter') as msg from parameter"
+# sql style 'eager'
+query <- 'select data.timestamp from parameter'
+res   <- DBI::dbGetQuery(sc, statement =query)
 
-# eager sql style
-res <- DBI::dbGetQuery(sc, statement = query)
-
-# lazy sql style
-query %>%
+# dbplyr style 'lazy'
+queery %>%
 dbplyr::sql() %>%
 tbl(sc, .)
-
-
-stream_stop(stream)
-
