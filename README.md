@@ -1,6 +1,6 @@
 # sparklyr.confluent.avro.playground
 
-docker-compose playground to test sparklyr.confluent.avro package
+vagrant/docker-compose playground to test sparklyr.confluent.avro package
 
 - contains kafka broker, zookeeper, schema-registry, rstudio, spark master and worker, zeppelin
 
