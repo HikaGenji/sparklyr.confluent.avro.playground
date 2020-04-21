@@ -1,4 +1,4 @@
-library(sparklyudf)
+library(sparklyr.confluent.avro)
 library(sparklyr)
 library(dplyr)
 
