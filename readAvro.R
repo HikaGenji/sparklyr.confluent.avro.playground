@@ -8,17 +8,14 @@ config$sparklyr.shell.repositories <- "http://packages.confluent.io/maven/"
 
 sc <- spark_connect(master = "local", spark_home = "spark", config=config)
 
-df <- invoke_static(sc, "sparklyudf.Reader", "stream", "parameter")
-
-df %>%
-spark_dataframe() %>%
+stream_read_kafka_avro(sc, "parameter") %>%
 stream_write_memory("parameter")
 
 # sql style 'eager'
-query <- 'select data.timestamp from parameter'
+query <- 'select data.timestamp, data.side from parameter'
 res   <- DBI::dbGetQuery(sc, statement =query)
 
 # dbplyr style 'lazy'
-queery %>%
+query %>%
 dbplyr::sql() %>%
 tbl(sc, .)
