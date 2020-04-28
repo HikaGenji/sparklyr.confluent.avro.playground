@@ -63,8 +63,7 @@ p = AvroProducer({
     }, default_key_schema=key_schema,
        default_value_schema=value_schema)
 
-def createOrders(n):
-  return ["OD-" + str(i) for i in range(1, n)]
+def createOrders(n): return ["OD-" + str(i) for i in range(1, n)]
 
 def delivery_callback(err, msg):
         if err:

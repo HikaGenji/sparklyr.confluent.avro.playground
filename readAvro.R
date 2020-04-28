@@ -21,3 +21,17 @@ dbplyr::sql() %>%
 tbl(sc, .) %>%
 group_by(id) %>%
 summarise(n=count()) 
+
+# test write
+stream_read_kafka_avro(sc, "parameter", startingOffsets="earliest") %>%
+stream_write_kafka_avro(sc, topic="output", dataFrame=.)
+
+stream_read_kafka_avro(sc, "output", startingOffsets="earliest") %>%
+stream_write_memory("q")
+
+'select value.value.timestamp as timestamp, value.value.side as side, value.value.id as id from q' %>%
+dbplyr::sql() %>%
+tbl(sc, .) %>%
+spark_dataframe()
+
+
