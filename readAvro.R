@@ -10,9 +10,10 @@ schemaRegistryUrl <- "http://schema-registry:8081"
 sc <- spark_connect(master = "local", spark_home = "spark", config=config)
 
 stream_read_kafka_avro(sc, "parameter", startingOffsets="earliest", kafkaUrl=kafkaUrl, schemaRegistryUrl=schemaRegistryUrl) %>%
+mutate(qty=side ^ 2) %>%
 stream_write_kafka_avro(sc, topic="output", dataFrame=., kafkaUrl=kafkaUrl, schemaRegistryUrl=schemaRegistryUrl)
 
-
+stream_read_kafka_avro(sc, "output", startingOffsets="earliest", kafkaUrl=kafkaUrl, schemaRegistryUrl=schemaRegistryUrl) 
 # sql style 'eager' returns an R dataframe
 query <- 'select * from output'
 res   <- DBI::dbGetQuery(sc, statement =query)
@@ -23,3 +24,15 @@ dbplyr::sql() %>%
 tbl(sc, .) %>%
 group_by(id) %>%
 summarise(n=count())
+
+# window
+
+stream_read_kafka_avro(sc, "output", startingOffsets="earliest", kafkaUrl=kafkaUrl, schemaRegistryUrl=schemaRegistryUrl) %>%
+spark_dataframe() %>%
+invoke("groupBy", c(invoke_static(sc, "org.apache.spark.sql.functions", "expr", "window(timestamp, '10 seconds', '5 seconds')"), 
+                  invoke_static(sc, "org.apache.spark.sql.functions", "col", "id"))) %>%
+invoke("count") %>%
+stream_write_memory("cnt")
+  
+  
+  
