@@ -7,7 +7,7 @@ config$sparklyr.shell.packages <- "io.confluent:kafka-avro-serializer:5.4.1,io.c
 config$sparklyr.shell.repositories <- "http://packages.confluent.io/maven/"
 kafkaUrl <- "broker:9092"
 schemaRegistryUrl <- "http://schema-registry:8081"
-sc <- spark_connect(master = "local", spark_home = "spark", config=config)
+sc <- spark_connect(master = "spark://spark-master:7077", spark_home = "spark", config=config)
 
 stream_read_kafka_avro(sc, "parameter", startingOffsets="earliest", kafkaUrl=kafkaUrl, schemaRegistryUrl=schemaRegistryUrl) %>%
 mutate(qty=side ^ 2) %>%
@@ -25,14 +25,22 @@ tbl(sc, .) %>%
 group_by(id) %>%
 summarise(n=count())
 
-# window
 
-stream_read_kafka_avro(sc, "output", startingOffsets="earliest", kafkaUrl=kafkaUrl, schemaRegistryUrl=schemaRegistryUrl) %>%
-spark_dataframe() %>%
-invoke("groupBy", c(invoke_static(sc, "org.apache.spark.sql.functions", "expr", "window(timestamp, '10 seconds', '5 seconds')"), 
-                  invoke_static(sc, "org.apache.spark.sql.functions", "col", "id"))) %>%
-invoke("count") %>%
-stream_write_memory("cnt")
-  
+tbl(sc, "output") %>%
+groupBy(c(window(., "timestamp", "10 seconds", "5 seconds"), col(., "id"))) %>%
+count
+
+tbl(sc, "output") %>%
+groupBy(c(window(., "timestamp", "10 seconds", "5 seconds"), col(., "id"))) %>%
+agg(avg(side*side))
+
+tbl(sc, "output") %>%
+groupBy(c(window(., "timestamp", "10 seconds", "5 seconds"), col(., "id"))) %>%
+agg(avg(side), avg(id))
+
+
+
+
+
   
   
