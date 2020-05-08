@@ -1,4 +1,4 @@
-// /home/rstudio/spark/bin/spark-shell --repositories http://packages.confluent.io/maven/ --packages io.confluent:kafka-avro-serializer:5.4.1,io.confluent:kafka-schema-registry:5.4.1,org.apache.spark:spark-sql-kafka-0-10_2.11:2.4.5,org.apache.spark:spark-avro_2.11:2.4.5,za.co.absa:abris_2.11:3.1.1
+// /home/rstudio/spark/bin/spark-shell --repositories http://packages.confluent.io/maven/ --packages org.apache.kafka:kafka_2.11:5.4.1-ce,io.confluent:kafka-avro-serializer:5.4.1,io.confluent:kafka-schema-registry:5.4.1,org.apache.spark:spark-sql-kafka-0-10_2.11:2.4.5,org.apache.spark:spark-avro_2.11:2.4.5
 // https://blog.engineering.publicissapient.fr/2017/09/27/spark-comprendre-et-corriger-lexception-task-not-serializable/package sparklyr.confluent.avro
 
 import io.confluent.kafka.schemaregistry.client.rest.RestService
@@ -7,45 +7,45 @@ import org.apache.avro.Schema
 import collection.JavaConverters._
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.Row
+import io.confluent.kafka.serializers.{KafkaAvroDecoder, AbstractKafkaAvroSerDeConfig, KafkaAvroDeserializerConfig}
+import java.util.Properties
+import org.apache.avro.generic.GenericData
 
-case class DeserializedFromKafkaRecord(key: String, value: String)
-val schemaRegistryURL = "http://schema-registry:8081"
+// another example
+// https://github.com/jaceklaskowski/spark-structured-streaming-book/issues/1
+
+
 val kafkaUrl = "broker:9092"
-val topicName = "parameter"
-val subjectKeyName = topicName + "-key"
-val subjectValueName = topicName + "-value"
-val restService = new RestService(schemaRegistryURL)
-val keyRestResponseSchema = restService.getLatestVersion(subjectKeyName)
-val valueRestResponseSchema = restService.getLatestVersion(subjectValueName)
-val parser = new Schema.Parser
-val topicKeyAvroSchema: Schema = parser.parse(keyRestResponseSchema.getSchema)
-val topicValueAvroSchema: Schema = parser.parse(valueRestResponseSchema.getSchema)
-val props = Map("schema.registry.url" -> schemaRegistryURL)
+val schemaRegistryURL = "http://schema-registry:8081"
+val topic = "parameter"
+val subjectValueName = topic + "-value"
+
+val kafkaParams = Map[String, String](
+"kafka.bootstrap.servers" -> kafkaUrl,
+"key.deserializer" -> "KafkaAvroDeserializer",
+"value.deserializer" -> "KafkaAvroDeserializer",
+"group.id" -> "structured-kafka",
+"auto.offset.reset" -> "earliest",
+"failOnDataLoss"-> "false",
+"schema.registry.url" -> schemaRegistryURL
+)
+
+object MyDeserializerWrapper {
+  val props = new Properties()
+  props.put(AbstractKafkaAvroSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG, schemaRegistryURL)
+  props.put(KafkaAvroDeserializerConfig.SPECIFIC_AVRO_READER_CONFIG, "true")
+  val vProps = new kafka.utils.VerifiableProperties(props)
+  val deser = new KafkaAvroDecoder(vProps)
+  val avro_schema = new RestService(schemaRegistryURL).getLatestVersion(subjectValueName)
+  val messageSchema = new Schema.Parser().parse(avro_schema.getSchema)
+}
+
+case class DeserializedFromKafkaRecord( value: String)
+
 val spark: SparkSession = SparkSession.builder().appName("KafkaConsumerAvro").getOrCreate()
-var keyDeserializer= new KafkaAvroDeserializer
-keyDeserializer.configure(props.asJava, true)
-var valueDeserializer= new KafkaAvroDeserializer
-keyDeserializer.configure(props.asJava, false)
-val rawTopicMessageDF = spark.readStream.format("kafka").option("kafka.bootstrap.servers", kafkaUrl).option("subscribe", topicName).option("startingOffsets", "earliest").load()
 
-class Deserializer(var k: Schema, var v: Schema, var kd: KafkaAvroDeserializer, var vd: KafkaAvroDeserializer) {
-  def deserialize(topicName:String, row: Row): DeserializedFromKafkaRecord = {
-    val deserializedKeyString = kd.deserialize(topicName, row.getAs[Array[Byte]]("key"), k).toString
-    val deserializedValueString = vd.deserialize(topicName, row.getAs[Array[Byte]]("value"), v).toString
-    DeserializedFromKafkaRecord(deserializedKeyString, deserializedValueString)
-  }
-}
+val df = spark.readStream.format("kafka").option("subscribe", topic).options(kafkaParams).load().map( x=>{
+  DeserializedFromKafkaRecord(MyDeserializerWrapper.deser.fromBytes(x.getAs[Array[Byte]]("value"), MyDeserializerWrapper.messageSchema).asInstanceOf[GenericData.Record].toString)
+})
 
-val kafkaAvroDeserializer = new Deserializer(topicKeyAvroSchema, topicValueAvroSchema, keyDeserializer, valueDeserializer)
-
-object DeserializerWrapper {
-  val deserializer = kafkaAvroDeserializer
-}
-
-//instantiate the SerDe classes if not already, then deserialize!
-val deserializedTopicMessageDS = rawTopicMessageDF.map{
-  row => DeserializerWrapper.deserializer.deserialize(topicName, row)
-}
-
-val deserializedDSOutputStream = deserializedTopicMessageDS.writeStream.outputMode("append").format("console").option("truncate", false).start()
-
+df.writeStream.outputMode("append").format("console").option("truncate", false).start()
