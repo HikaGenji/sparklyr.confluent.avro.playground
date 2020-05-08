@@ -15,7 +15,7 @@ c = Consumer({
     'auto.offset.reset': 'earliest'
 })
 
-c.subscribe(['test'])
+c.subscribe(['parameter'])
 
 while True:
     msg = c.poll(1.0)

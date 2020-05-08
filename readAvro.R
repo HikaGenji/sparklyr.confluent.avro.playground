@@ -30,9 +30,9 @@ tbl(sc, "output") %>%
 groupBy(c(window(., "timestamp", "10 seconds", "5 seconds"), col(., "id"))) %>%
 count
 
-tbl(sc, "output") %>%
+t <- tbl(sc, "output") %>%
 groupBy(c(window(., "timestamp", "10 seconds", "5 seconds"), col(., "id"))) %>%
-agg(avg(side*side))
+agg(count(side*side))
 
 tbl(sc, "output") %>%
 groupBy(c(window(., "timestamp", "10 seconds", "5 seconds"), col(., "id"))) %>%
