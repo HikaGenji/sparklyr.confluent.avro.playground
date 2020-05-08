@@ -30,7 +30,7 @@ val kafkaParams = Map[String, String](
 "schema.registry.url" -> schemaRegistryURL
 )
 
-object MyDeserializerWrapper {
+object DeserializerWrapper {
   val props = new Properties()
   props.put(AbstractKafkaAvroSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG, schemaRegistryURL)
   props.put(KafkaAvroDeserializerConfig.SPECIFIC_AVRO_READER_CONFIG, "true")
@@ -45,10 +45,32 @@ case class DeserializedFromKafkaRecord( value: String)
 val spark: SparkSession = SparkSession.builder().appName("KafkaConsumerAvro").getOrCreate()
 
 val df = spark.readStream.format("kafka").option("subscribe", topic).options(kafkaParams).load().map( x=>{
-  DeserializedFromKafkaRecord(MyDeserializerWrapper.deser.fromBytes(x.getAs[Array[Byte]]("value"), MyDeserializerWrapper.messageSchema).asInstanceOf[GenericData.Record].toString)
+  DeserializedFromKafkaRecord(MyDeserializerWrapper.deser.fromBytes(x.getAs[Array[Byte]]("value"), DeserializerWrapper.messageSchema).asInstanceOf[GenericData.Record].toString)
 })
 
 df.writeStream.outputMode("append").format("console").option("truncate", false).start()
 
 // next step: register deserialize as a udf to use in sql statement from_avro
 // call from_json with schema string to parse into columns
+
+// to mix with
+// https://github.com/xebia-france/spark-structured-streaming-blog/blob/master/src/main/scala/AvroConsumer.scala
+
+spark.udf.register("deserialize", (bytes: Array[Byte]) =>
+  DeserializerWrapper.deser.fromBytes(bytes)
+)
+
+val kafkaDataFrame = spark
+      .readStream
+      .format("kafka")
+      .option("kafka.bootstrap.servers", kafkaUrl)
+      .option("subscribe", topic)
+      .load()
+
+val valueDataFrame = kafkaDataFrame.selectExpr("""deserialize(value) AS message""")
+
+ import org.apache.spark.sql.functions._
+
+    val formattedDataFrame = valueDataFrame.select(
+      from_json(col("message"), sparkSchema.dataType).alias("parsed_value"))
+      .select("parsed_value.*")
