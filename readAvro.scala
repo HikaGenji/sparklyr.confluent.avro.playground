@@ -49,3 +49,6 @@ val df = spark.readStream.format("kafka").option("subscribe", topic).options(kaf
 })
 
 df.writeStream.outputMode("append").format("console").option("truncate", false).start()
+
+// next step: register deserialize as a udf to use in sql statement from_avro
+// call from_json with schema string to parse into columns
