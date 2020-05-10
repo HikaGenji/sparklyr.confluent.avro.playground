@@ -13,6 +13,8 @@ stream_read_kafka_avro(sc, kafka.bootstrap.servers=kafkaUrl, schema.registry.top
 mutate(qty=side ^ 2) %>%
 stream_write_kafka_avro(kafka.bootstrap.servers=kafkaUrl, schema.registry.topic="output", schema.registry.url=schemaRegistryUrl) 
 
+stream_read_kafka_avro(sc, kafka.bootstrap.servers=kafkaUrl, schema.registry.topic="output", startingOffsets="earliest", schema.registry.url=schemaRegistryUrl) 
+
 # sql style 'eager' returns an R dataframe
 query <- 'select * from output'
 res   <- DBI::dbGetQuery(sc, statement =query)
