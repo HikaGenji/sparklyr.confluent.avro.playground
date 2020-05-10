@@ -65,9 +65,10 @@ writeRegistryConfig$schema.namespace <- "RecordNameSpace"
 stream_read_kafka(sc, options=list(kafka.bootstrap.servers = "broker:9092", subscribe = "parameter", startingOffsets="earliest")) %>%
 spark_dataframe() %>%
 invoke("select", list(invoke(invoke_static(sc, "za.co.absa.abris.avro.functions", "from_confluent_avro", invoke_static(sc, "org.apache.spark.sql.functions", "col", "value"), registryConfig), "as", "value"))) %>%
+# need to wrap value into struct before calling to_confluent_avro
 invoke("select", list(invoke(invoke_static(sc, "za.co.absa.abris.avro.functions", "to_confluent_avro", invoke_static(sc, "org.apache.spark.sql.functions", "col", "value"), writeRegistryConfig), "as", "value"))) %>% 
 invoke("createOrReplaceTempView", "output")
 tbl(sc, "output")
 
 stream_write_kafka(options=list(kafka.bootstrap.servers = "broker:9092", topic = "output")) 
-  
+
