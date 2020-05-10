@@ -27,10 +27,6 @@ group_by(id) %>%
 summarise(n=count())
 
 
-tbl(sc, "output") %>%
-groupBy(c(window(., "timestamp", "10 seconds", "5 seconds"), col(., "id"))) %>%
-count
-
 t <- tbl(sc, "output") %>%
 groupBy(c(window(., "timestamp", "10 seconds", "5 seconds"), col(., "id"))) %>%
 agg(count(side*side))
