@@ -66,6 +66,8 @@ stream_read_kafka(sc, options=list(kafka.bootstrap.servers = "broker:9092", subs
 spark_dataframe() %>%
 invoke("select", list(invoke(invoke_static(sc, "za.co.absa.abris.avro.functions", "from_confluent_avro", invoke_static(sc, "org.apache.spark.sql.functions", "col", "value"), registryConfig), "as", "value"))) %>%
 # need to wrap value into struct before calling to_confluent_avro
+# val allColumns = struct(dataFrame.columns.head, dataFrame.columns.tail: _*)
+# invoke_static(sc, "org.apache.spark.sql.functions", "struct", "value", list()
 invoke("select", list(invoke(invoke_static(sc, "za.co.absa.abris.avro.functions", "to_confluent_avro", invoke_static(sc, "org.apache.spark.sql.functions", "col", "value"), writeRegistryConfig), "as", "value"))) %>% 
 invoke("createOrReplaceTempView", "output")
 tbl(sc, "output")
