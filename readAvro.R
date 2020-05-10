@@ -9,11 +9,10 @@ kafkaUrl <- "broker:9092"
 schemaRegistryUrl <- "http://schema-registry:8081"
 sc <- spark_connect(master = "spark://spark-master:7077", spark_home = "spark", config=config)
 
-stream_read_kafka_avro(sc, "parameter", startingOffsets="earliest", kafkaUrl=kafkaUrl, schemaRegistryUrl=schemaRegistryUrl) %>%
+stream_read_kafka_avro(sc, kafka.bootstrap.servers=kafkaUrl, schema.registry.topic="parameter", startingOffsets="earliest", schema.registry.url=schemaRegistryUrl) %>%
 mutate(qty=side ^ 2) %>%
-stream_write_kafka_avro(sc, topic="output", dataFrame=., kafkaUrl=kafkaUrl, schemaRegistryUrl=schemaRegistryUrl)
+stream_write_kafka_avro(kafka.bootstrap.servers=kafkaUrl, schema.registry.topic="output", schema.registry.url=schemaRegistryUrl) 
 
-stream_read_kafka_avro(sc, "output", startingOffsets="earliest", kafkaUrl=kafkaUrl, schemaRegistryUrl=schemaRegistryUrl) 
 # sql style 'eager' returns an R dataframe
 query <- 'select * from output'
 res   <- DBI::dbGetQuery(sc, statement =query)
@@ -38,41 +37,6 @@ tbl(sc, "output") %>%
 groupBy(c(window(., "timestamp", "10 seconds", "5 seconds"), col(., "id"))) %>%
 agg(avg(side), avg(id))
 
-# from_confluent_avro(col("value"), schemaRegistryConfig) 
-registryConfig <- new.env()
-registryConfig$schema.registry.topic <- "parameter"
-registryConfig$schema.registry.url <- "http://schema-registry:8081"
-registryConfig$value.schema.naming.strategy <- "topic.name"
-registryConfig$value.schema.id <- "latest"
-stream_read_kafka(sc, options=list(kafka.bootstrap.servers = "broker:9092", subscribe = "parameter", startingOffsets="earliest")) %>%
-spark_dataframe() %>%
-invoke("select", list(invoke(invoke_static(sc, "za.co.absa.abris.avro.functions", "from_confluent_avro", invoke_static(sc, "org.apache.spark.sql.functions", "col", "value"), registryConfig), "as", "value"))) %>%
-invoke("select", "value.*", list())%>%
-invoke("createOrReplaceTempView", "parameter")
-tbl(sc, "parameter")
-
-query <- 'select * from parameter'
-res   <- DBI::dbGetQuery(sc, statement =query)
-
-# to_confluent_avro(allColumns, registryConfig) 
-writeRegistryConfig <- new.env()
-writeRegistryConfig$schema.registry.topic <- "output"
-writeRegistryConfig$schema.registry.url <- "http://schema-registry:8081"
-writeRegistryConfig$value.schema.naming.strategy <- "topic.name"
-writeRegistryConfig$schema.name <- "record"
-writeRegistryConfig$schema.namespace <- "namespace"
-
-stream_read_kafka(sc, options=list(kafka.bootstrap.servers = "broker:9092", subscribe = "parameter", startingOffsets="earliest")) %>%
-spark_dataframe() %>%
-invoke("select", list(invoke(invoke_static(sc, "za.co.absa.abris.avro.functions", "from_confluent_avro", invoke_static(sc, "org.apache.spark.sql.functions", "col", "value"), registryConfig), "as", "value"))) %>%
-invoke("select", "value.*", list()) %>%
-invoke("select", list(invoke(invoke_static(sc, "org.apache.spark.sql.functions", "struct", head(invoke(., "columns"), 1)[[1]], tail(invoke(., "columns"), -1)), "as", "value"))) %>%
-invoke("select", list(invoke(invoke_static(sc, "za.co.absa.abris.avro.functions", "to_confluent_avro", invoke_static(sc, "org.apache.spark.sql.functions", "col", "value"), writeRegistryConfig), "as", "value"))) %>% 
-invoke("createOrReplaceTempView", "output")
-
-tbl(sc, "output") %>%
-spark_dataframe() %>%
-stream_write_kafka(options=list(kafka.bootstrap.servers = "broker:9092", topic = "output")) 
 
 
 
