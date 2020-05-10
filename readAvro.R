@@ -54,5 +54,17 @@ tbl(sc, "parameter")
 query <- 'select * from parameter'
 res   <- DBI::dbGetQuery(sc, statement =query)
 
-  
+# to_confluent_avro(allColumns, registryConfig) 
+writeRegistryConfig <- new.env()
+writeRegistryConfig$schema.registry.topic <- "output"
+writeRegistryConfig$schema.registry.url <- "http://schema-registry:8081"
+writeRegistryConfig$value.schema.naming.strategy <- "topic.name"
+writeRegistryConfig$schema.name <- "parameters"
+writeRegistryConfig$schema.namespace <- "indicators"
+
+stream_read_kafka(sc, options=list(kafka.bootstrap.servers = "broker:9092", subscribe = "parameter", startingOffsets="earliest")) %>%
+spark_dataframe() %>%
+invoke("select", list(invoke(invoke_static(sc, "za.co.absa.abris.avro.functions", "from_confluent_avro", invoke_static(sc, "org.apache.spark.sql.functions", "col", "value"), registryConfig), "as", "value"))) %>%
+invoke("select", list(invoke(invoke_static(sc, "za.co.absa.abris.avro.functions", "to_confluent_avro", invoke_static(sc, "org.apache.spark.sql.functions", "col", "value"), writeRegistryConfig), "as", "value"))) %>% 
+stream_write_kafka(options=list(kafka.bootstrap.servers = "broker:9092", topic = "output")) 
   
