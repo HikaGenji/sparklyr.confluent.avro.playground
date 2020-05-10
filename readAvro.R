@@ -38,9 +38,21 @@ tbl(sc, "output") %>%
 groupBy(c(window(., "timestamp", "10 seconds", "5 seconds"), col(., "id"))) %>%
 agg(avg(side), avg(id))
 
+# from_confluent_avro(col("value"), schemaRegistryConfig) 
+registryConfig <- new.env()
+registryConfig$schema.registry.topic <- "parameter"
+registryConfig$schema.registry.url <- "http://schema-registry:8081"
+registryConfig$value.schema.naming.strategy <- "topic.name"
+registryConfig$value.schema.id <- "latest"
+stream_read_kafka(sc, options=list(kafka.bootstrap.servers = "broker:9092", subscribe = "parameter", startingOffsets="earliest")) %>%
+spark_dataframe() %>%
+invoke("select", list(invoke_static(sc, "za.co.absa.abris.avro.functions", "from_confluent_avro", invoke_static(sc, "org.apache.spark.sql.functions", "col", "value"), registryConfig))) %>%
+invoke("select", "from_avro(value).*", list())%>%
+invoke("createOrReplaceTempView", "parameter")
+tbl(sc, "parameter")
 
-
-
+query <- 'select * from parameter'
+res   <- DBI::dbGetQuery(sc, statement =query)
 
   
   
