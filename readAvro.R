@@ -46,8 +46,8 @@ registryConfig$value.schema.naming.strategy <- "topic.name"
 registryConfig$value.schema.id <- "latest"
 stream_read_kafka(sc, options=list(kafka.bootstrap.servers = "broker:9092", subscribe = "parameter", startingOffsets="earliest")) %>%
 spark_dataframe() %>%
-invoke("select", list(invoke_static(sc, "za.co.absa.abris.avro.functions", "from_confluent_avro", invoke_static(sc, "org.apache.spark.sql.functions", "col", "value"), registryConfig))) %>%
-invoke("select", "from_avro(value).*", list())%>%
+invoke("select", list(invoke(invoke_static(sc, "za.co.absa.abris.avro.functions", "from_confluent_avro", invoke_static(sc, "org.apache.spark.sql.functions", "col", "value"), registryConfig), "as", "value"))) %>%
+invoke("select", "value.*", list())%>%
 invoke("createOrReplaceTempView", "parameter")
 tbl(sc, "parameter")
 
