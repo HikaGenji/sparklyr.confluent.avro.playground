@@ -59,17 +59,19 @@ writeRegistryConfig <- new.env()
 writeRegistryConfig$schema.registry.topic <- "output"
 writeRegistryConfig$schema.registry.url <- "http://schema-registry:8081"
 writeRegistryConfig$value.schema.naming.strategy <- "topic.name"
-writeRegistryConfig$schema.name <- "RecordName"
-writeRegistryConfig$schema.namespace <- "RecordNameSpace"
+writeRegistryConfig$schema.name <- "record"
+writeRegistryConfig$schema.namespace <- "namespace"
 
 stream_read_kafka(sc, options=list(kafka.bootstrap.servers = "broker:9092", subscribe = "parameter", startingOffsets="earliest")) %>%
 spark_dataframe() %>%
 invoke("select", list(invoke(invoke_static(sc, "za.co.absa.abris.avro.functions", "from_confluent_avro", invoke_static(sc, "org.apache.spark.sql.functions", "col", "value"), registryConfig), "as", "value"))) %>%
-invoke("select", list(invoke_static(sc, "org.apache.spark.sql.functions", "struct", head(invoke(., "columns"), 1)[[1]], tail(invoke(., "columns"), -1)))) %>%
+invoke("select", "value.*", list()) %>%
+invoke("select", list(invoke(invoke_static(sc, "org.apache.spark.sql.functions", "struct", head(invoke(., "columns"), 1)[[1]], tail(invoke(., "columns"), -1)), "as", "value"))) %>%
 invoke("select", list(invoke(invoke_static(sc, "za.co.absa.abris.avro.functions", "to_confluent_avro", invoke_static(sc, "org.apache.spark.sql.functions", "col", "value"), writeRegistryConfig), "as", "value"))) %>% 
 invoke("createOrReplaceTempView", "output")
-tbl(sc, "output")
 
+tbl(sc, "output") %>%
+spark_dataframe() %>%
 stream_write_kafka(options=list(kafka.bootstrap.servers = "broker:9092", topic = "output")) 
 
 

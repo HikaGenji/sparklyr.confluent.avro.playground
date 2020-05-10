@@ -74,6 +74,8 @@ val schemaRegistryUrl="http://schema-registry:8081"
 val valueSchemaNamingStrategy="topic.name"
 val avroRecordName="record"
 val avroRecordNamespace="namespace"
+val checkpointLocation= "a"
+Bridge.stream_read("output", "local[*]", "earliest", "broker:9092", "http://schema-registry:8081", "ERROR", "U").writeStream.format("console").start()
 
 
 
