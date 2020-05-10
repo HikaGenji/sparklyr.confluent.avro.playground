@@ -1,4 +1,4 @@
-// /home/rstudio/spark/bin/spark-shell --repositories http://packages.confluent.io/maven/ --packages org.apache.kafka:kafka_2.11:5.4.1-ce,io.confluent:kafka-avro-serializer:5.4.1,io.confluent:kafka-schema-registry:5.4.1,org.apache.spark:spark-sql-kafka-0-10_2.11:2.4.5,org.apache.spark:spark-avro_2.11:2.4.5
+// /home/rstudio/spark/bin/spark-shell --repositories http://packages.confluent.io/maven/ --packages org.apache.kafka:kafka_2.11:5.4.1-ce,io.confluent:kafka-avro-serializer:5.4.1,io.confluent:kafka-schema-registry:5.4.1,org.apache.spark:spark-sql-kafka-0-10_2.11:2.4.5,org.apache.spark:spark-avro_2.11:2.4.5,za.co.absa:abris_2.11:3.1.1
 // https://blog.engineering.publicissapient.fr/2017/09/27/spark-comprendre-et-corriger-lexception-task-not-serializable/package sparklyr.confluent.avro
 
 import java.util.Properties
@@ -64,9 +64,17 @@ object Bridge {
     dataFrame.select(to_confluent_avro(allColumns, registryConfig) as 'value).writeStream.format("kafka").option("kafka.bootstrap.servers", kafkaUrl).option("topic", topic).option("checkpointLocation", checkpointLocation).start()
   }
 }
-// val x = Bridge.stream_read("parameter").select("value.timestamp", "value.id", "value.side")
+// val x = Bridge.stream_read("parameter", "local[*]", "earliest", "broker:9092", "http://schema-registry:8081", "ERROR", "U").select("value.timestamp", "value.id", "value.side")
 // Bridge.stream_write("parameter_2", x, avroRecordName="value", avroRecordNamespace="indicator")
 // Bridge.stream_read("parameter_2").writeStream.format("console").start()
+val topic="output"
+val dataFrame=x
+val kafkaUrl="broker:9092"
+val schemaRegistryUrl="http://schema-registry:8081"
+val valueSchemaNamingStrategy="topic.name"
+val avroRecordName="record"
+val avroRecordNamespace="namespace"
+
 
 
 
