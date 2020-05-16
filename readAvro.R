@@ -34,6 +34,17 @@ tbl(sc, "output") %>%
 groupBy(c(window(., "timestamp", "10 seconds", "5 seconds"), col(., "id"))) %>%
 agg(avg(side), avg(id))
 
+dbplyr::sql_render(
+"select * from parameter" %>%
+dbplyr::sql() %>%
+tbl(sc, .) %>%
+mutate(time=window(timestamp, "10 seconds")) %>%
+group_by(time, id) %>%
+summarize(n=count())
+)
+
+
+
 
 
 
