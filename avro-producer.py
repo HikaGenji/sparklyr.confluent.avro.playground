@@ -72,9 +72,10 @@ def delivery_callback(err, msg):
             sys.stderr.write('%% Message delivered to %s [%d] @ %d\n' %
                              (msg.topic(), msg.partition(), msg.offset()))
 
-r = [p.produce(topic="parameter", key={"id": o}, 
-     value={"timestamp": int(round(time.time() * 1000)), "id": o, "side": 1}, 
-     callback=delivery_callback) for o in createOrders(10)]
-     
-p.flush()
+while True:
+  time.sleep(1)
+  r = [p.produce(topic="parameter", key={"id": o}, 
+       value={"timestamp": int(round(time.time() * 1000)), "id": o, "side": 1}, 
+       callback=delivery_callback) for o in createOrders(2)]
+  p.flush()
   

@@ -8,40 +8,27 @@ kafkaUrl <- "broker:9092"
 schemaRegistryUrl <- "http://schema-registry:8081"
 sc <- spark_connect(master = "spark://spark-master:7077", spark_home = "spark", config=config)
 
-stream_read_kafka_avro(sc, kafka.bootstrap.servers=kafkaUrl, schema.registry.topic="parameter", startingOffsets="earliest", schema.registry.url=schemaRegistryUrl) %>%
-mutate(qty=side ^ 2) %>%
-stream_write_kafka_avro(kafka.bootstrap.servers=kafkaUrl, schema.registry.topic="output", schema.registry.url=schemaRegistryUrl) 
+stream_read_kafka_avro(sc, kafka.bootstrap.servers=kafkaUrl, schema.registry.topic="parameter", startingOffsets="earliest", schema.registry.url=schemaRegistryUrl)
 
-stream_read_kafka_avro(sc, kafka.bootstrap.servers=kafkaUrl, schema.registry.topic="output", startingOffsets="earliest", schema.registry.url=schemaRegistryUrl) 
+"select side, id from parameter" %>%
+dbplyr::sql() %>%
+tbl(sc, .) %>%
+stream_watermark() %>%
+group_by(time=window(timestamp, "30 seconds", "5 seconds"))%>%
+sdf_separate_column("time", into=c("start", "end")) %>%
+select(-time) %>%
+stream_write_kafka_avro(kafka.bootstrap.servers=kafkaUrl, schema.registry.topic="aggregate", schema.registry.url=schemaRegistryUrl) 
 
 # sql style 'eager' returns an R dataframe
-query <- 'select * from output'
+query <- 'select * aggregate'
 res   <- DBI::dbGetQuery(sc, statement =query)
 
-# dbplyr style 'lazy' returns a spark dataframe stream
-query %>%
-dbplyr::sql() %>%
-tbl(sc, .) %>%
-group_by(id) %>%
-summarise(n=count())
+stream_read_kafka_avro(sc, kafka.bootstrap.servers=kafkaUrl, schema.registry.topic="aggregate", startingOffsets="earliest", schema.registry.url=schemaRegistryUrl) 
 
 
-t <- tbl(sc, "output") %>%
-groupBy(c(window(., "timestamp", "10 seconds", "5 seconds"), col(., "id"))) %>%
-agg(count(side*side))
 
-tbl(sc, "output") %>%
-groupBy(c(window(., "timestamp", "10 seconds", "5 seconds"), col(., "id"))) %>%
-agg(avg(side), avg(id))
 
-dbplyr::sql_render(
-"select * from parameter" %>%
-dbplyr::sql() %>%
-tbl(sc, .) %>%
-mutate(time=window(timestamp, "10 seconds")) %>%
-group_by(time, id) %>%
-summarize(n=count())
-)
+
 
 
 
