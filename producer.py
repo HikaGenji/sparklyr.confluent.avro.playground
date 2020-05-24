@@ -4,6 +4,7 @@
 import json
 import time
 import sys
+import random
 from datetime import datetime
 from confluent_kafka import Producer
 
@@ -16,13 +17,14 @@ def delivery_callback(err, msg):
             sys.stderr.write('%% Message delivered to %s [%d] @ %d\n' %
                              (msg.topic(), msg.partition(), msg.offset()))
 
-for i in range(10):
-  p.produce("test", json.dumps({"timestamp": int(round(time.time() * 1000)), "id": 'OD' + str(i), "side": 1}), callback=delivery_callback)
-  p.poll(0)
+while True:
+  time.sleep(1)
+  p.produce("parameter", json.dumps({"timestamp": int(round(time.time() * 1000)), "id": 'OD' + str(random.randint(1, 10)), "side": 1}), callback=delivery_callback)
+  p.flush()
      
-p.flush()
+
 
 # test
 # docker exec -it broker bash
-# /usr/bin/kafka-console-consumer --bootstrap-server localhost:29092 --topic order --from-beginning
+# /usr/bin/kafka-console-consumer --bootstrap-server localhost:29092 --topic parameter --from-beginning
   

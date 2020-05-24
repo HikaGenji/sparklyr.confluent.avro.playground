@@ -1,36 +1,40 @@
+library(sparklyr.confluent.avro)
 library(sparklyr)
 library(dplyr)
-library(stringr)
 
 config <- spark_config()
-config$sparklyr.shell.packages <- "org.apache.spark:spark-sql-kafka-0-10_2.12:3.0.0-preview"
+config$sparklyr.shell.repositories <- "http://packages.confluent.io/maven/"
+kafkaUrl <- "broker:9092"
+schemaRegistryUrl <- "http://schema-registry:8081"
+sc <- spark_connect(master = "spark://spark-master:7077", spark_home = "spark", config=config)
 
-sc <- spark_connect("local", spark_home = "~/spark/spark-3.0.0-preview-bin-hadoop3.2", version="3.0.0-preview", config=config)
+stream_read_kafka(sc, options=list(kafka.bootstrap.servers=kafkaUrl, subscribe="parameter")) %>%
+sdf_register("parameter")
 
-broker <- "broker:9092"
+# ok so this works
 
-read_options <- list(kafka.bootstrap.servers = broker, subscribe = "test", startingOffsets="earliest")
-
-df <- stream_read_kafka(sc, options = read_options)
-
-# dplyr style
-df %>% 
-mutate(v=as.character(value)) %>%
-select(v)
-
-# try sql via DBI on stream
-df %>%
-spark_dataframe() %>%
-stream_write_memory("test")
-
-res <- DBI::dbGetQuery(sc, statement ='select CAST(value as STRING) from test')
-
-# invoke style
-"select from_json(CAST(value as STRING), 'timestamp BIGINT, id STRING, side INT') as value from test" %>%
+"select value from parameter" %>%
 dbplyr::sql() %>%
 tbl(sc, .) %>%
-mutate(timestamp=value.timestamp, id=value.id, side=value.side) %>%
-select(-value) %>%
-group_by(id) %>%
-summarise(n=count()) 
+mutate(value=as.character(value)) %>%
+stream_watermark() %>%
+group_by(time=window(timestamp, "5 minutes", "30 seconds"))%>%
+summarise(n_new=n()) %>%
+sdf_separate_column("time", into=c("start", "end")) %>%
+select(-time) %>%
+mutate(value=as.character(n_new))%>%
+stream_write_kafka(options=list(kafka.bootstrap.servers=kafkaUrl, topic="aggregate")) 
+
+# bug in stream_read_kafka: it stop the write whenever read is triggered
+
+# ok this one works
+s <- stream_read_kafka(sc, options=list(kafka.bootstrap.servers=kafkaUrl, subscribe="aggregate"))
+
+
+
+
+
+
+
+
 
