@@ -10,9 +10,6 @@ sc <- spark_connect(master = "spark://spark-master:7077", spark_home = "spark", 
 
 stream_read_kafka(sc, options=list(kafka.bootstrap.servers=kafkaUrl, subscribe="parameter")) %>%
 sdf_register("parameter")
-
-# ok so this works
-
 "select value from parameter" %>%
 dbplyr::sql() %>%
 tbl(sc, .) %>%
@@ -23,12 +20,12 @@ summarise(n_new=n()) %>%
 sdf_separate_column("time", into=c("start", "end")) %>%
 select(-time) %>%
 mutate(value=as.character(n_new))%>%
-stream_write_kafka(options=list(kafka.bootstrap.servers=kafkaUrl, topic="aggregate")) 
+stream_write_kafka(options=list(kafka.bootstrap.servers=kafkaUrl, topic="aggregate"), mode="complete") 
 
-# bug in stream_read_kafka: it stop the write whenever read is triggered
-
-# ok this one works
+# this is fine
 s <- stream_read_kafka(sc, options=list(kafka.bootstrap.servers=kafkaUrl, subscribe="aggregate"))
+
+# if i print s, it stops producing into the aggregate topic
 
 
 
