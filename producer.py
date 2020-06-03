@@ -18,7 +18,7 @@ def delivery_callback(err, msg):
                              (msg.topic(), msg.partition(), msg.offset()))
 
 while True:
-  time.sleep(1)
+  time.sleep(5)
   p.produce("parameter", json.dumps({"timestamp": int(round(time.time() * 1000)), "id": 'OD' + str(random.randint(1, 10)), "side": 1}), callback=delivery_callback)
   p.flush()
      
